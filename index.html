@@ -6,1198 +6,313 @@
 <title>Organisk Kemi — Studieapp År 8</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #0a0e17;
-  --surface: #131a2b;
-  --surface2: #1a2340;
-  --accent: #00e59b;
-  --accent2: #00b8ff;
-  --accent3: #ff6b6b;
-  --accent4: #ffd93d;
-  --text: #e8edf5;
-  --text-dim: #7a88a0;
-  --border: #253050;
-  --correct: #00e59b;
-  --wrong: #ff6b6b;
-  --radius: 16px;
-  --glow: 0 0 30px rgba(0,229,155,0.15);
-}
-
-* { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-  font-family: 'Outfit', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Background effect */
-body::before {
-  content: '';
-  position: fixed;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(ellipse at 30% 20%, rgba(0,229,155,0.06) 0%, transparent 50%),
-              radial-gradient(ellipse at 70% 80%, rgba(0,184,255,0.05) 0%, transparent 50%);
-  z-index: 0;
-  pointer-events: none;
-}
-
-.app { position: relative; z-index: 1; }
-
-/* HEADER */
-.header {
-  text-align: center;
-  padding: 48px 24px 32px;
-  position: relative;
-}
-.header h1 {
-  font-size: clamp(2.2rem, 6vw, 3.8rem);
-  font-weight: 900;
-  letter-spacing: -2px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  line-height: 1.1;
-}
-.header p {
-  color: var(--text-dim);
-  font-size: 1.1rem;
-  margin-top: 8px;
-  font-weight: 300;
-}
-.header .molecule-deco {
-  font-family: 'Space Mono', monospace;
-  color: var(--accent);
-  opacity: 0.3;
-  font-size: 0.85rem;
-  margin-top: 12px;
-  letter-spacing: 4px;
-}
-
-/* SCORE BAR */
-.score-bar {
-  display: flex;
-  justify-content: center;
-  gap: 32px;
-  padding: 16px 24px;
-  margin: 0 auto 24px;
-  max-width: 500px;
-}
-.score-item {
-  text-align: center;
-}
-.score-item .num {
-  font-size: 2rem;
-  font-weight: 800;
-  font-family: 'Space Mono', monospace;
-}
-.score-item .label {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-.score-item.correct .num { color: var(--correct); }
-.score-item.wrong .num { color: var(--wrong); }
-.score-item.streak .num { color: var(--accent4); }
-
-/* NAVIGATION */
-.nav {
-  display: flex;
-  gap: 8px;
-  padding: 8px 24px;
-  max-width: 900px;
-  margin: 0 auto 32px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.nav::-webkit-scrollbar { display: none; }
-.nav-btn {
-  flex-shrink: 0;
-  padding: 10px 20px;
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  background: var(--surface);
-  color: var(--text-dim);
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  white-space: nowrap;
-}
-.nav-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.nav-btn.active {
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: var(--bg);
-  border-color: transparent;
-  box-shadow: var(--glow);
-}
-
-/* SECTIONS */
-.section {
-  display: none;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 24px 60px;
-  animation: fadeIn 0.4s ease;
-}
-.section.active { display: block; }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.section-title {
-  font-size: 1.8rem;
-  font-weight: 800;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.section-title .icon {
-  font-size: 1.6rem;
-}
-.section-desc {
-  color: var(--text-dim);
-  margin-bottom: 28px;
-  font-weight: 300;
-}
-
-/* CARDS */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 28px;
-  margin-bottom: 20px;
-  transition: all 0.3s;
-}
-.card:hover {
-  border-color: rgba(0,229,155,0.3);
-}
-
-/* QUIZ */
-.quiz-progress {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 24px;
-}
-.quiz-dot {
-  flex: 1;
-  height: 4px;
-  border-radius: 4px;
-  background: var(--border);
-  transition: all 0.3s;
-}
-.quiz-dot.done { background: var(--correct); }
-.quiz-dot.current { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
-.quiz-dot.wrong-dot { background: var(--wrong); }
-
-.quiz-question {
-  font-size: 1.3rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-  line-height: 1.4;
-}
-.quiz-category {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  margin-bottom: 20px;
-}
-
-.quiz-options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.quiz-option {
-  padding: 16px 20px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface2);
-  color: var(--text);
-  font-family: 'Outfit', sans-serif;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.25s;
-  text-align: left;
-  font-weight: 400;
-}
-.quiz-option:hover:not(.selected):not(.revealed) {
-  border-color: var(--accent2);
-  background: rgba(0,184,255,0.08);
-}
-.quiz-option.correct-answer {
-  border-color: var(--correct);
-  background: rgba(0,229,155,0.12);
-  color: var(--correct);
-}
-.quiz-option.wrong-answer {
-  border-color: var(--wrong);
-  background: rgba(255,107,107,0.12);
-  color: var(--wrong);
-}
-
-.quiz-feedback {
-  margin-top: 16px;
-  padding: 16px;
-  border-radius: 12px;
-  font-weight: 600;
-  display: none;
-}
-.quiz-feedback.show { display: block; }
-.quiz-feedback.correct-fb {
-  background: rgba(0,229,155,0.1);
-  border: 1px solid rgba(0,229,155,0.3);
-  color: var(--correct);
-}
-.quiz-feedback.wrong-fb {
-  background: rgba(255,107,107,0.1);
-  border: 1px solid rgba(255,107,107,0.3);
-  color: var(--wrong);
-}
-.quiz-explanation {
-  font-weight: 300;
-  color: var(--text-dim);
-  margin-top: 8px;
-  font-size: 0.9rem;
-}
-
-.quiz-next {
-  margin-top: 20px;
-  padding: 14px 36px;
-  border: none;
-  border-radius: 100px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: var(--bg);
-  font-family: 'Outfit', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: none;
-  transition: all 0.3s;
-}
-.quiz-next:hover { transform: scale(1.03); }
-.quiz-next.show { display: inline-block; }
-
-/* MATCHING GAME */
-.match-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-.match-col-title {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  margin-bottom: 12px;
-}
-.match-item {
-  padding: 14px 18px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface2);
-  cursor: pointer;
-  transition: all 0.25s;
-  font-weight: 600;
-  text-align: center;
-  user-select: none;
-}
-.match-item:hover:not(.matched):not(.selected) {
-  border-color: var(--accent2);
-}
-.match-item.selected {
-  border-color: var(--accent);
-  background: rgba(0,229,155,0.12);
-  box-shadow: 0 0 16px rgba(0,229,155,0.2);
-}
-.match-item.matched {
-  border-color: var(--correct);
-  background: rgba(0,229,155,0.08);
-  opacity: 0.6;
-  cursor: default;
-}
-.match-item.wrong-match {
-  animation: shake 0.4s;
-  border-color: var(--wrong);
-}
-@keyframes shake {
-  0%,100% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  75% { transform: translateX(6px); }
-}
-
-/* DESTILLATION TOWER */
-.tower-container {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-}
-.tower {
-  width: 200px;
-  flex-shrink: 0;
-  background: linear-gradient(to bottom, #1a3a5c, #3a1a1a, #5c2a0a);
-  border-radius: 16px 16px 24px 24px;
-  border: 2px solid var(--border);
-  position: relative;
-  overflow: hidden;
-}
-.tower-slot {
-  padding: 16px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  transition: all 0.3s;
-  position: relative;
-}
-.tower-slot .temp {
-  position: absolute;
-  left: 6px;
-  top: 4px;
-  font-family: 'Space Mono', monospace;
-  font-size: 0.6rem;
-  color: var(--accent2);
-  opacity: 0.7;
-}
-.tower-slot.filled {
-  color: var(--text);
-  font-weight: 600;
-}
-.tower-slot.correct-slot {
-  background: rgba(0,229,155,0.15);
-  color: var(--correct);
-}
-.tower-slot.wrong-slot {
-  background: rgba(255,107,107,0.15);
-  color: var(--wrong);
-}
-.tower-slot.highlight {
-  background: rgba(0,184,255,0.15);
-  border-color: var(--accent2);
-}
-
-.tower-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-}
-.tower-drag-item {
-  padding: 14px 18px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface2);
-  cursor: pointer;
-  transition: all 0.25s;
-  font-weight: 600;
-  text-align: center;
-  user-select: none;
-}
-.tower-drag-item:hover:not(.placed) {
-  border-color: var(--accent2);
-}
-.tower-drag-item.selected-tower {
-  border-color: var(--accent);
-  background: rgba(0,229,155,0.12);
-}
-.tower-drag-item.placed {
-  opacity: 0.3;
-  cursor: default;
-}
-
-/* FLASHCARDS */
-.flashcard {
-  perspective: 1000px;
-  height: 320px;
-  cursor: pointer;
-  margin-bottom: 20px;
-}
-.flashcard-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transition: transform 0.6s;
-  transform-style: preserve-3d;
-}
-.flashcard.flipped .flashcard-inner {
-  transform: rotateY(180deg);
-}
-.flashcard-front, .flashcard-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  border-radius: var(--radius);
-  border: 2px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
-  text-align: center;
-}
-.flashcard-front {
-  background: linear-gradient(135deg, var(--surface), var(--surface2));
-}
-.flashcard-back {
-  background: linear-gradient(135deg, var(--surface2), var(--surface));
-  transform: rotateY(180deg);
-}
-.flashcard-title {
-  font-size: 2rem;
-  font-weight: 800;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.flashcard-formula {
-  font-family: 'Space Mono', monospace;
-  font-size: 1.4rem;
-  color: var(--accent2);
-  margin-bottom: 16px;
-}
-.flashcard-hint {
-  font-size: 0.85rem;
-  color: var(--text-dim);
-}
-.flashcard-back-content {
-  text-align: left;
-  font-size: 0.95rem;
-  line-height: 1.7;
-}
-.flashcard-back-content strong {
-  color: var(--accent);
-}
-.flashcard-nav {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
-.flashcard-nav button {
-  padding: 12px 28px;
-  border: 2px solid var(--border);
-  border-radius: 100px;
-  background: var(--surface);
-  color: var(--text);
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-.flashcard-nav button:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.flashcard-counter {
-  text-align: center;
-  font-family: 'Space Mono', monospace;
-  color: var(--text-dim);
-  font-size: 0.85rem;
-  margin-bottom: 16px;
-}
-
-/* SUMMARY */
-.summary-topic {
-  margin-bottom: 24px;
-}
-.summary-topic h3 {
-  font-size: 1.15rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.summary-topic h3 .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  flex-shrink: 0;
-}
-.summary-content {
-  color: var(--text-dim);
-  line-height: 1.8;
-  font-weight: 300;
-  padding-left: 20px;
-  border-left: 2px solid var(--border);
-}
-.summary-content strong {
-  color: var(--text);
-  font-weight: 600;
-}
-.summary-formula {
-  font-family: 'Space Mono', monospace;
-  color: var(--accent2);
-  font-size: 0.9rem;
-}
-
-/* RESULTS */
-.results-card {
-  text-align: center;
-  padding: 48px 32px;
-}
-.results-score {
-  font-size: 4rem;
-  font-weight: 900;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.results-text {
-  font-size: 1.3rem;
-  margin-top: 8px;
-  font-weight: 300;
-}
-.results-detail {
-  color: var(--text-dim);
-  margin-top: 16px;
-}
-
-/* BTN GENERAL */
-.btn-primary {
-  padding: 14px 36px;
-  border: none;
-  border-radius: 100px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: var(--bg);
-  font-family: 'Outfit', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
-  margin-top: 16px;
-}
-.btn-primary:hover { transform: scale(1.03); box-shadow: var(--glow); }
-
-.btn-secondary {
-  padding: 12px 28px;
-  border: 2px solid var(--border);
-  border-radius: 100px;
-  background: var(--surface);
-  color: var(--text);
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-
-/* RESPONSIVE */
-@media (max-width: 600px) {
-  .tower-container { flex-direction: column; align-items: center; }
-  .tower { width: 100%; max-width: 300px; }
-  .match-grid { grid-template-columns: 1fr; }
-  .header h1 { font-size: 2rem; }
-}
-
-/* TRUE/FALSE specific */
-.tf-buttons {
-  display: flex;
-  gap: 12px;
-  margin-top: 8px;
-}
-.tf-btn {
-  flex: 1;
-  padding: 16px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface2);
-  color: var(--text);
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.25s;
-}
-.tf-btn:hover:not(.revealed) {
-  border-color: var(--accent2);
-}
-.tf-btn.correct-answer { border-color: var(--correct); background: rgba(0,229,155,0.12); color: var(--correct); }
-.tf-btn.wrong-answer { border-color: var(--wrong); background: rgba(255,107,107,0.12); color: var(--wrong); }
-
-/* Reset button */
-.reset-section {
-  text-align: center;
-  margin-top: 20px;
-}
+:root{--bg:#0a0e17;--surface:#131a2b;--surface2:#1a2340;--accent:#00e59b;--accent2:#00b8ff;--accent3:#ff6b6b;--accent4:#ffd93d;--accent5:#c084fc;--text:#e8edf5;--text-dim:#7a88a0;--border:#253050;--correct:#00e59b;--wrong:#ff6b6b;--radius:16px;--glow:0 0 30px rgba(0,229,155,0.15)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 20%,rgba(0,229,155,0.06) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(0,184,255,0.05) 0%,transparent 50%);z-index:0;pointer-events:none}
+.app{position:relative;z-index:1}
+.header{text-align:center;padding:40px 24px 24px}
+.header h1{font-size:clamp(2.2rem,6vw,3.8rem);font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1}
+.header p{color:var(--text-dim);font-size:1.05rem;margin-top:6px;font-weight:300}
+.header .deco{font-family:'Space Mono',monospace;color:var(--accent);opacity:.25;font-size:.8rem;margin-top:10px;letter-spacing:4px}
+.score-bar{display:flex;justify-content:center;gap:28px;padding:12px 24px;margin:0 auto 16px;max-width:500px}
+.score-item{text-align:center}.score-item .num{font-size:1.8rem;font-weight:800;font-family:'Space Mono',monospace}.score-item .label{font-size:.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px}
+.score-item.correct .num{color:var(--correct)}.score-item.wrong .num{color:var(--wrong)}.score-item.streak .num{color:var(--accent4)}
+.nav{display:flex;gap:6px;padding:6px 16px;max-width:960px;margin:0 auto 24px;overflow-x:auto;scrollbar-width:none;flex-wrap:wrap;justify-content:center}.nav::-webkit-scrollbar{display:none}
+.nav-btn{flex-shrink:0;padding:8px 16px;border:1px solid var(--border);border-radius:100px;background:var(--surface);color:var(--text-dim);font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .3s;white-space:nowrap}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent)}.nav-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--bg);border-color:transparent;box-shadow:var(--glow)}
+.section{display:none;max-width:820px;margin:0 auto;padding:0 20px 60px;animation:fadeIn .35s ease}.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.section-title{font-size:1.7rem;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:10px}.section-title .icon{font-size:1.5rem}
+.section-desc{color:var(--text-dim);margin-bottom:24px;font-weight:300;font-size:.95rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;transition:all .3s}.card:hover{border-color:rgba(0,229,155,.2)}
+.quiz-progress{display:flex;gap:3px;margin-bottom:20px}.quiz-dot{flex:1;height:4px;border-radius:4px;background:var(--border);transition:all .3s}.quiz-dot.done{background:var(--correct)}.quiz-dot.current{background:var(--accent2);box-shadow:0 0 8px var(--accent2)}.quiz-dot.wrong-dot{background:var(--wrong)}
+.quiz-question{font-size:1.25rem;font-weight:700;margin-bottom:4px;line-height:1.4}.quiz-category{font-family:'Space Mono',monospace;font-size:.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:3px;margin-bottom:16px}
+.quiz-options{display:flex;flex-direction:column;gap:8px}
+.quiz-option{padding:14px 18px;border:2px solid var(--border);border-radius:12px;background:var(--surface2);color:var(--text);font-family:'Outfit',sans-serif;font-size:.95rem;cursor:pointer;transition:all .25s;text-align:left}
+.quiz-option:hover:not(.revealed){border-color:var(--accent2);background:rgba(0,184,255,.06)}.quiz-option.correct-answer{border-color:var(--correct);background:rgba(0,229,155,.1);color:var(--correct)}.quiz-option.wrong-answer{border-color:var(--wrong);background:rgba(255,107,107,.1);color:var(--wrong)}
+.quiz-feedback{margin-top:14px;padding:14px;border-radius:12px;font-weight:600;display:none}.quiz-feedback.show{display:block}.quiz-feedback.correct-fb{background:rgba(0,229,155,.08);border:1px solid rgba(0,229,155,.25);color:var(--correct)}.quiz-feedback.wrong-fb{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.25);color:var(--wrong)}
+.quiz-explanation{font-weight:300;color:var(--text-dim);margin-top:6px;font-size:.88rem}
+.quiz-next{margin-top:16px;padding:12px 32px;border:none;border-radius:100px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--bg);font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;display:none;transition:all .3s}.quiz-next:hover{transform:scale(1.03)}.quiz-next.show{display:inline-block}
+.tf-buttons{display:flex;gap:10px;margin-top:6px}.tf-btn{flex:1;padding:14px;border:2px solid var(--border);border-radius:12px;background:var(--surface2);color:var(--text);font-family:'Outfit',sans-serif;font-size:1.05rem;font-weight:700;cursor:pointer;transition:all .25s}.tf-btn:hover:not(.revealed){border-color:var(--accent2)}.tf-btn.correct-answer{border-color:var(--correct);background:rgba(0,229,155,.1);color:var(--correct)}.tf-btn.wrong-answer{border-color:var(--wrong);background:rgba(255,107,107,.1);color:var(--wrong)}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.match-col-title{font-family:'Space Mono',monospace;font-size:.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:3px;margin-bottom:10px}
+.match-item{padding:12px 16px;border:2px solid var(--border);border-radius:12px;background:var(--surface2);cursor:pointer;transition:all .25s;font-weight:600;text-align:center;user-select:none;margin-bottom:6px}.match-item:hover:not(.matched):not(.selected){border-color:var(--accent2)}.match-item.selected{border-color:var(--accent);background:rgba(0,229,155,.1);box-shadow:0 0 12px rgba(0,229,155,.15)}.match-item.matched{border-color:var(--correct);background:rgba(0,229,155,.06);opacity:.5;cursor:default}.match-item.wrong-match{animation:shake .4s;border-color:var(--wrong)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.tower-container{display:flex;gap:20px;align-items:flex-start}.tower{width:200px;flex-shrink:0;background:linear-gradient(to bottom,#1a3a5c,#3a1a1a,#5c2a0a);border-radius:14px 14px 20px 20px;border:2px solid var(--border);overflow:hidden}
+.tower-slot{padding:14px 10px;border-bottom:1px solid rgba(255,255,255,.08);min-height:56px;display:flex;align-items:center;justify-content:center;font-size:.78rem;color:var(--text-dim);transition:all .3s;position:relative;cursor:pointer}.tower-slot .temp{position:absolute;left:5px;top:3px;font-family:'Space Mono',monospace;font-size:.55rem;color:var(--accent2);opacity:.7}.tower-slot.filled{color:var(--text);font-weight:600}.tower-slot.correct-slot{background:rgba(0,229,155,.12);color:var(--correct)}.tower-slot.wrong-slot{background:rgba(255,107,107,.12);color:var(--wrong)}
+.tower-items{display:flex;flex-direction:column;gap:6px;flex:1}.tower-drag-item{padding:12px 16px;border:2px solid var(--border);border-radius:12px;background:var(--surface2);cursor:pointer;transition:all .25s;font-weight:600;text-align:center;user-select:none}.tower-drag-item:hover:not(.placed){border-color:var(--accent2)}.tower-drag-item.selected-tower{border-color:var(--accent);background:rgba(0,229,155,.1)}.tower-drag-item.placed{opacity:.3;cursor:default}
+.flashcard{perspective:1000px;height:300px;cursor:pointer;margin-bottom:16px}.flashcard-inner{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}.flashcard.flipped .flashcard-inner{transform:rotateY(180deg)}
+.flashcard-front,.flashcard-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);border:2px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center}
+.flashcard-front{background:linear-gradient(135deg,var(--surface),var(--surface2))}.flashcard-back{background:linear-gradient(135deg,var(--surface2),var(--surface));transform:rotateY(180deg)}
+.flashcard-title{font-size:1.8rem;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.flashcard-formula{font-family:'Space Mono',monospace;font-size:1.3rem;color:var(--accent2);margin-bottom:12px}.flashcard-hint{font-size:.85rem;color:var(--text-dim)}
+.flashcard-back-content{text-align:left;font-size:.9rem;line-height:1.7}.flashcard-back-content strong{color:var(--accent)}
+.flashcard-nav{display:flex;gap:10px;justify-content:center}.flashcard-nav button{padding:10px 24px;border:2px solid var(--border);border-radius:100px;background:var(--surface);color:var(--text);font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .3s}.flashcard-nav button:hover{border-color:var(--accent);color:var(--accent)}
+.flashcard-counter{text-align:center;font-family:'Space Mono',monospace;color:var(--text-dim);font-size:.8rem;margin-bottom:12px}
+.fib-input{background:var(--surface2);border:2px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-family:'Outfit',sans-serif;font-size:1rem;width:100%;max-width:300px;outline:none;transition:all .3s}.fib-input:focus{border-color:var(--accent2)}.fib-input.correct-input{border-color:var(--correct);background:rgba(0,229,155,.08)}.fib-input.wrong-input{border-color:var(--wrong);background:rgba(255,107,107,.08)}
+.fib-hint{font-size:.8rem;color:var(--text-dim);margin-top:6px;font-style:italic}
+.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:500px;margin:0 auto}
+.memory-card{aspect-ratio:1;border:2px solid var(--border);border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .3s;user-select:none;text-align:center;padding:8px}.memory-card:hover:not(.mem-flipped):not(.mem-matched){border-color:var(--accent2)}.memory-card.mem-flipped{border-color:var(--accent);background:rgba(0,229,155,.1);color:var(--accent)}.memory-card.mem-matched{border-color:var(--correct);background:rgba(0,229,155,.06);opacity:.5;cursor:default}
+.sort-zones{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}.sort-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:16px;min-height:100px;cursor:pointer;transition:border-color .3s}.sort-zone:hover{border-color:var(--accent2)}
+.sort-zone-title{font-family:'Space Mono',monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px}.sort-zone.za .sort-zone-title{color:var(--accent)}.sort-zone.zb .sort-zone-title{color:var(--accent2)}.sort-zone.zc .sort-zone-title{color:var(--accent4)}.sort-zone.zd .sort-zone-title{color:var(--accent5)}
+.sort-placed{display:inline-block;padding:5px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);margin:3px;font-size:.82rem}.sort-placed.sort-correct{border-color:var(--correct);color:var(--correct)}.sort-placed.sort-wrong{border-color:var(--wrong);color:var(--wrong)}
+.sort-items-pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}.sort-item{padding:10px 16px;border:2px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer;font-weight:600;font-size:.9rem;transition:all .25s;user-select:none}.sort-item:hover:not(.sort-used){border-color:var(--accent2)}.sort-item.sort-selected{border-color:var(--accent);background:rgba(0,229,155,.1)}.sort-item.sort-used{opacity:.3;cursor:default}
+.reaction-eq{font-family:'Space Mono',monospace;font-size:1.05rem;text-align:center;padding:16px;background:var(--surface2);border-radius:12px;margin-bottom:16px;line-height:2}
+.reaction-blank{display:inline-block;min-width:90px;border-bottom:2px solid var(--accent);padding:2px 8px;margin:0 4px;color:var(--accent);cursor:pointer}.reaction-blank.filled{color:var(--text)}.reaction-blank.r-correct{border-color:var(--correct);color:var(--correct)}.reaction-blank.r-wrong{border-color:var(--wrong);color:var(--wrong)}
+.reaction-choices{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px}.reaction-choice{padding:10px 18px;border:2px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer;font-family:'Space Mono',monospace;font-size:.9rem;transition:all .25s}.reaction-choice:hover:not(.r-used){border-color:var(--accent2)}.reaction-choice.r-used{opacity:.3;cursor:default}
+.timer-bar{height:6px;background:var(--border);border-radius:6px;margin-bottom:20px;overflow:hidden}.timer-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:6px;transition:width .1s linear}.timer-fill.urgent{background:linear-gradient(90deg,var(--accent3),var(--accent4))}
+.timer-text{font-family:'Space Mono',monospace;font-size:.8rem;color:var(--text-dim);text-align:center;margin-bottom:8px}
+.summary-topic{margin-bottom:0}.summary-topic h3{font-size:1.1rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}.summary-topic h3 .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.summary-content{color:var(--text-dim);line-height:1.8;font-weight:300;padding-left:18px;border-left:2px solid var(--border);font-size:.92rem}.summary-content strong{color:var(--text);font-weight:600}.summary-formula{font-family:'Space Mono',monospace;color:var(--accent2);font-size:.88rem}
+.results-card{text-align:center;padding:40px 28px}.results-score{font-size:3.5rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.results-text{font-size:1.2rem;margin-top:6px;font-weight:300}.results-detail{color:var(--text-dim);margin-top:12px;font-size:.9rem}
+.btn-primary{padding:12px 32px;border:none;border-radius:100px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--bg);font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .3s}.btn-primary:hover{transform:scale(1.03);box-shadow:var(--glow)}
+.btn-secondary{padding:10px 24px;border:2px solid var(--border);border-radius:100px;background:var(--surface);color:var(--text);font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .3s}.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.reset-section{text-align:center;margin-top:16px}
+.sub-section{margin-top:36px;padding-top:24px;border-top:1px solid var(--border)}.sub-title{font-size:1.3rem;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}.sub-desc{color:var(--text-dim);margin-bottom:16px;font-weight:300;font-size:.9rem}
+@media(max-width:600px){.tower-container{flex-direction:column;align-items:center}.tower{width:100%;max-width:280px}.match-grid{grid-template-columns:1fr}.memory-grid{grid-template-columns:repeat(3,1fr)}.sort-zones{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="app">
-  <!-- HEADER -->
-  <div class="header">
-    <h1>Organisk Kemi</h1>
-    <p>Interaktiv studieapp — År 8</p>
-    <div class="molecule-deco">C — H — O — N — S</div>
-  </div>
-
-  <!-- SCORE -->
-  <div class="score-bar">
-    <div class="score-item correct"><div class="num" id="score-correct">0</div><div class="label">Rätt</div></div>
-    <div class="score-item wrong"><div class="num" id="score-wrong">0</div><div class="label">Fel</div></div>
-    <div class="score-item streak"><div class="num" id="score-streak">0</div><div class="label">Streak</div></div>
-  </div>
-
-  <!-- NAV -->
-  <div class="nav">
-    <button class="nav-btn active" onclick="showSection('quiz')">🧪 Quiz</button>
-    <button class="nav-btn" onclick="showSection('matching')">🔗 Para ihop</button>
-    <button class="nav-btn" onclick="showSection('tower')">🏗️ Destillation</button>
-    <button class="nav-btn" onclick="showSection('flashcards')">🃏 Flashcards</button>
-    <button class="nav-btn" onclick="showSection('summary')">📖 Sammanfattning</button>
-  </div>
-
-  <!-- QUIZ SECTION -->
-  <div class="section active" id="section-quiz">
-    <div class="section-title"><span class="icon">🧪</span> Quiz</div>
-    <div class="section-desc">Testa dina kunskaper med flervalsfrågor och sant/falskt!</div>
-    <div class="quiz-progress" id="quiz-progress"></div>
-    <div class="card" id="quiz-card">
-      <div class="quiz-category" id="quiz-category"></div>
-      <div class="quiz-question" id="quiz-question"></div>
-      <div class="quiz-options" id="quiz-options"></div>
-      <div class="quiz-feedback" id="quiz-feedback">
-        <div id="quiz-feedback-text"></div>
-        <div class="quiz-explanation" id="quiz-explanation"></div>
-      </div>
-      <button class="quiz-next" id="quiz-next" onclick="nextQuestion()">Nästa fråga →</button>
-    </div>
-    <div class="reset-section">
-      <button class="btn-secondary" onclick="resetQuiz()">↻ Starta om quiz</button>
-    </div>
-  </div>
-
-  <!-- MATCHING SECTION -->
-  <div class="section" id="section-matching">
-    <div class="section-title"><span class="icon">🔗</span> Para ihop</div>
-    <div class="section-desc">Klicka på ett prefix och sedan rätt antal kolatomer!</div>
-    <div id="match-game-area"></div>
-    <div class="reset-section" style="margin-top:24px;">
-      <button class="btn-secondary" onclick="initMatching()">↻ Starta om</button>
-    </div>
-
-    <div style="margin-top: 40px;">
-      <div class="section-title" style="font-size:1.4rem;"><span class="icon">🧬</span> Para alkaner</div>
-      <div class="section-desc">Para alkannamnet med rätt molekylformel!</div>
-      <div id="match-alkane-area"></div>
-      <div class="reset-section" style="margin-top:16px;">
-        <button class="btn-secondary" onclick="initAlkaneMatching()">↻ Starta om</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- TOWER SECTION -->
-  <div class="section" id="section-tower">
-    <div class="section-title"><span class="icon">🏗️</span> Destillationstornet</div>
-    <div class="section-desc">Klicka på en produkt och sedan på rätt plats i tornet. Produkter med lägst kokpunkt hamnar högst upp!</div>
-    <div class="tower-container" id="tower-area"></div>
-    <div class="reset-section" style="margin-top:24px;">
-      <button class="btn-secondary" onclick="initTower()">↻ Starta om</button>
-    </div>
-  </div>
-
-  <!-- FLASHCARDS -->
-  <div class="section" id="section-flashcards">
-    <div class="section-title"><span class="icon">🃏</span> Flashcards — Alkoholer & mer</div>
-    <div class="section-desc">Klicka på kortet för att vända! Lär dig viktiga föreningar.</div>
-    <div class="flashcard-counter" id="fc-counter"></div>
-    <div class="flashcard" id="flashcard" onclick="flipCard()">
-      <div class="flashcard-inner" id="flashcard-inner">
-        <div class="flashcard-front" id="fc-front"></div>
-        <div class="flashcard-back" id="fc-back"></div>
-      </div>
-    </div>
-    <div class="flashcard-nav">
-      <button onclick="prevCard()">← Föregående</button>
-      <button onclick="nextCard()">Nästa →</button>
-    </div>
-  </div>
-
-  <!-- SUMMARY -->
-  <div class="section" id="section-summary">
-    <div class="section-title"><span class="icon">📖</span> Sammanfattning</div>
-    <div class="section-desc">Alla nyckelbegrepp du behöver kunna till provet.</div>
-    <div id="summary-content"></div>
-  </div>
+<div class="header"><h1>Organisk Kemi</h1><p>Interaktiv studieapp — År 8</p><div class="deco">C — H — O — N — S</div></div>
+<div class="score-bar"><div class="score-item correct"><div class="num" id="sc">0</div><div class="label">Rätt</div></div><div class="score-item wrong"><div class="num" id="sw">0</div><div class="label">Fel</div></div><div class="score-item streak"><div class="num" id="ss">0</div><div class="label">Streak</div></div></div>
+<div class="nav" id="main-nav">
+<button class="nav-btn active" onclick="go('quiz',this)">🧪 Quiz</button>
+<button class="nav-btn" onclick="go('fill',this)">✏️ Fyll i</button>
+<button class="nav-btn" onclick="go('match',this)">🔗 Para ihop</button>
+<button class="nav-btn" onclick="go('sort',this)">📂 Sortera</button>
+<button class="nav-btn" onclick="go('reaction',this)">⚗️ Reaktioner</button>
+<button class="nav-btn" onclick="go('tower',this)">🏗️ Destillation</button>
+<button class="nav-btn" onclick="go('memory',this)">🧠 Memory</button>
+<button class="nav-btn" onclick="go('flash',this)">🃏 Flashcards</button>
+<button class="nav-btn" onclick="go('timed',this)">⏱️ Snabbis</button>
+<button class="nav-btn" onclick="go('summary',this)">📖 Sammanfattning</button>
 </div>
-
+<div class="section active" id="s-quiz"><div class="section-title"><span class="icon">🧪</span> Quiz</div><div class="section-desc">15 slumpade frågor ur en bank på 80+. Ny omgång = nya frågor!</div><div class="quiz-progress" id="qp"></div><div class="card" id="qcard"><div class="quiz-category" id="qcat"></div><div class="quiz-question" id="qq"></div><div class="quiz-options" id="qo"></div><div class="quiz-feedback" id="qf"><div id="qft"></div><div class="quiz-explanation" id="qe"></div></div><button class="quiz-next" id="qn" onclick="qNext()">Nästa fråga →</button></div><div class="reset-section"><button class="btn-secondary" onclick="qInit()">↻ Ny omgång</button></div></div>
+<div class="section" id="s-fill"><div class="section-title"><span class="icon">✏️</span> Fyll i rätt svar</div><div class="section-desc">Skriv in det som saknas — utan flerval!</div><div id="fib-area"></div><div class="reset-section"><button class="btn-secondary" onclick="fibInit()">↻ Nya frågor</button></div></div>
+<div class="section" id="s-match"><div class="section-title"><span class="icon">🔗</span> Para ihop</div><div class="section-desc">Klicka ett objekt till vänster, sedan dess par till höger!</div><div id="match-area"></div><div class="reset-section"><button class="btn-secondary" onclick="matchInit()">↻ Starta om</button></div><div class="sub-section"><div class="sub-title">🧬 Alkaner → formler</div><div class="sub-desc">Para alkanens namn med rätt molekylformel!</div><div id="match2-area"></div><div class="reset-section"><button class="btn-secondary" onclick="match2Init()">↻ Starta om</button></div></div><div class="sub-section"><div class="sub-title">🔬 Funktionella grupper</div><div class="sub-desc">Para ämnestyp med rätt kännetecken!</div><div id="match3-area"></div><div class="reset-section"><button class="btn-secondary" onclick="match3Init()">↻ Starta om</button></div></div></div>
+<div class="section" id="s-sort"><div class="section-title"><span class="icon">📂</span> Sortera rätt</div><div class="section-desc">Klicka på ett ämne, sedan på rätt kategori!</div><div id="sort-area"></div><div class="reset-section"><button class="btn-secondary" onclick="sortInit()">↻ Ny sortering</button></div></div>
+<div class="section" id="s-reaction"><div class="section-title"><span class="icon">⚗️</span> Reaktionsformler</div><div class="section-desc">Fyll i det som saknas i reaktionerna!</div><div id="react-area"></div><div class="reset-section"><button class="btn-secondary" onclick="reactInit()">↻ Nya reaktioner</button></div></div>
+<div class="section" id="s-tower"><div class="section-title"><span class="icon">🏗️</span> Destillationstornet</div><div class="section-desc">Klicka en produkt, sedan rätt plats. Lägst kokpunkt = högst upp!</div><div class="tower-container" id="tower-area"></div><div class="reset-section"><button class="btn-secondary" onclick="towerInit()">↻ Starta om</button></div></div>
+<div class="section" id="s-memory"><div class="section-title"><span class="icon">🧠</span> Memory</div><div class="section-desc">Hitta matchande par — namn och formel!</div><div class="memory-grid" id="mem-grid"></div><div class="reset-section" style="margin-top:16px"><button class="btn-secondary" onclick="memInit()">↻ Nytt spel</button></div></div>
+<div class="section" id="s-flash"><div class="section-title"><span class="icon">🃏</span> Flashcards</div><div class="section-desc">Klicka för att vända! Lär dig viktiga föreningar och begrepp.</div><div class="flashcard-counter" id="fc-c"></div><div class="flashcard" id="fc" onclick="fcFlip()"><div class="flashcard-inner" id="fc-i"><div class="flashcard-front" id="fc-f"></div><div class="flashcard-back" id="fc-b"></div></div></div><div class="flashcard-nav"><button onclick="fcPrev()">← Föregående</button><button onclick="fcNext()">Nästa →</button></div></div>
+<div class="section" id="s-timed"><div class="section-title"><span class="icon">⏱️</span> Snabbis — 60 sekunder</div><div class="section-desc">Svara på så många som möjligt på en minut!</div><div id="timed-area"><div style="text-align:center;padding:40px"><div style="font-size:4rem">⏱️</div><div style="font-size:1.3rem;font-weight:700;margin:16px 0">Redo?</div><div style="color:var(--text-dim);margin-bottom:24px">60 sekunder. Snabba rätta svar = fler poäng!</div><button class="btn-primary" onclick="timedStart()">Starta! →</button></div></div></div>
+<div class="section" id="s-summary"><div class="section-title"><span class="icon">📖</span> Sammanfattning</div><div class="section-desc">Alla nyckelbegrepp du behöver till provet.</div><div id="sum-content"></div></div>
+</div>
 <script>
-// ================ STATE ================
-let totalCorrect = 0;
-let totalWrong = 0;
-let streak = 0;
+let SC=0,SW=0,SS=0;
+function score(ok){if(ok){SC++;SS++}else{SW++;SS=0}document.getElementById('sc').textContent=SC;document.getElementById('sw').textContent=SW;document.getElementById('ss').textContent=SS}
+function go(id,btn){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('s-'+id).classList.add('active');btn.classList.add('active')}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
 
-function updateScore(correct) {
-  if (correct) { totalCorrect++; streak++; }
-  else { totalWrong++; streak = 0; }
-  document.getElementById('score-correct').textContent = totalCorrect;
-  document.getElementById('score-wrong').textContent = totalWrong;
-  document.getElementById('score-streak').textContent = streak;
-}
-
-// ================ NAVIGATION ================
-function showSection(id) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('section-' + id).classList.add('active');
-  event.target.classList.add('active');
-}
-
-// ================ QUIZ ================
-const quizQuestions = [
-  { cat: "Organisk kemi", q: "Vad handlar organisk kemi om?", options: ["Metallernas kemi", "Kolföreningarnas kemi", "Gasernas kemi", "Syrors kemi"], correct: 1, explain: "Organisk kemi är vetenskapen om kolföreningarnas kemi." },
-  { cat: "Kolatomen", q: "Hur många bindningar kan en kolatom som max ha?", options: ["2", "3", "4", "6"], correct: 2, explain: "Kol har 4 valenselektroner och kan bilda max 4 bindningar." },
-  { cat: "Kolväten", q: "Vad kallas organiska molekyler som enbart innehåller kol och väte?", options: ["Alkoholer", "Kolväten", "Estrar", "Syror"], correct: 1, explain: "Kolväten består av enbart kol (C) och väte (H)." },
-  { cat: "Alkaner", q: "Vad är molekylformeln för metan?", options: ["C₂H₆", "CH₄", "C₃H₈", "CH₃OH"], correct: 1, explain: "Metan har 1 kolatom och 4 väteatomer: CH₄." },
-  { cat: "Alkaner", q: "Vad heter alkanen med 3 kolatomer?", options: ["Etan", "Butan", "Propan", "Pentan"], correct: 2, explain: "Prop- = 3 kolatomer, alltså propan." },
-  { cat: "Sant/Falskt", q: "Metan är en av de viktigaste växthusgaserna.", type: "tf", correct: true, explain: "Metan (CH₄) är en kraftig växthusgas, mycket starkare än CO₂ per molekyl." },
-  { cat: "Prefix", q: "Vilket prefix betyder 5 kolatomer?", options: ["But-", "Hex-", "Pent-", "Prop-"], correct: 2, explain: "Pent- = 5 (tänk pentagon = femhörning)." },
-  { cat: "Bindningar", q: "Vad kallas kolväten med dubbelbindningar?", options: ["Alkaner", "Alkener", "Alkyner", "Alkoholer"], correct: 1, explain: "Alkener har dubbelbindningar och är omättade kolväten." },
-  { cat: "Sant/Falskt", q: "Diamant och grafit är båda former av rent kol.", type: "tf", correct: true, explain: "Diamant, grafit och fulleren är alla allotroper av kol — rent kol i olika strukturer." },
-  { cat: "Fossila bränslen", q: "Vad bildas fossila bränslen av?", options: ["Vulkanutbrott", "Rester av växter och djur", "Meteoriter", "Havsvatten"], correct: 1, explain: "Fossila bränslen bildas av rester av växter och djur under högt tryck och temperatur i miljontals år." },
-  { cat: "Destillation", q: "Vid fraktionerad destillation, vilken produkt hamnar högst upp i tornet?", options: ["Asfalt", "Bensin", "Gaser", "Dieselolja"], correct: 2, explain: "Gaser har lägst kokpunkt och stiger högst upp i tornet." },
-  { cat: "Alkoholer", q: "Vilken funktionell grupp kännetecknar alla alkoholer?", options: ["COOH", "OH", "CO", "NH₂"], correct: 1, explain: "Alkoholer innehåller minst en hydroxylgrupp (OH)." },
-  { cat: "Sant/Falskt", q: "Metanol kallas också för träsprit och är mycket giftigt.", type: "tf", correct: true, explain: "Metanol (CH₃OH) är mycket giftigt. Förgiftning kan orsaka blindhet eller döden." },
-  { cat: "Alkoholer", q: "Vad används glykol främst till?", options: ["Dricka", "Hudkrämer", "Kylarvätska", "Bränsle"], correct: 2, explain: "Glykol (etylenglykol) blandas med vatten och används som kylarvätska i bilar." },
-  { cat: "Alkoholer", q: "Glycerol är en trevärdig alkohol. Vad används den i?", options: ["Bensin", "Hudkrämer och marsipan", "Kylarvätska", "Färg"], correct: 1, explain: "Glycerol binder fukt och används i hudkrämer, salvor, marsipan och snus." },
-  { cat: "Organiska syror", q: "Vad innehåller alla organiska syror?", options: ["En OH-grupp", "En NH₂-grupp", "En karboxylgrupp (COOH)", "En dubbbelbindning"], correct: 2, explain: "Organiska syror (karboxylsyror) innehåller alltid en COOH-grupp." },
-  { cat: "Organiska syror", q: "Var finns metansyra (myrsyra) naturligt?", options: ["I äpplen", "I brännässlor och rödmyror", "I mjölk", "I potatis"], correct: 1, explain: "Myrsyra finns i brännässlor och rödmyror — därav namnet!" },
-  { cat: "Estrar", q: "Vad bildas när en alkohol reagerar med en karboxylsyra?", options: ["En alken", "En polymer", "En ester + vatten", "En alkan"], correct: 2, explain: "Alkohol + karboxylsyra → ester + vatten. Estrar ger smak i godis och glass." },
-  { cat: "Sant/Falskt", q: "Kolväten är lätta att lösa i vatten.", type: "tf", correct: false, explain: "Kolväten är opolära och svårlösliga i vatten, men löser sig bra i fetter." },
-  { cat: "Kolets kretslopp", q: "Vilka tre växthusgaser nämns i materialet?", options: ["Syre, kväve, argon", "Koldioxid, metan, vattenånga", "Ozon, helium, neon", "Koldioxid, syre, kväve"], correct: 1, explain: "De viktigaste växthusgaserna är koldioxid (CO₂), metan (CH₄) och vattenånga." },
-  { cat: "Polymerer", q: "Vilket ämne är den mest använda polymeren?", options: ["Plast", "Gummi", "Papper (cellulosa)", "Nylon"], correct: 2, explain: "Papper är gjort av cellulosa som är uppbyggt av glukosringar — en naturlig polymer." },
-  { cat: "Sant/Falskt", q: "Etanol är beroendeframkallande och särskilt farligt för ungdomars hjärna.", type: "tf", correct: true, explain: "Hjärnan är inte färdigutvecklad förrän 20-25 års ålder, vilket gör alkohol extra farligt för unga." },
-  { cat: "Periodiska systemet", q: "Hur många valenselektroner har ädelgaser?", options: ["1", "4", "7", "8 (fullt yttre skal)"], correct: 3, explain: "Ädelgaser har 8 valenselektroner (fullt yttersta skal), vilket gör dem stabila och oreaktiva." },
-  { cat: "Kolets kretslopp", q: "Vad gör växterna med CO₂ vid fotosyntes?", options: ["Släpper ut mer CO₂", "Omvandlar det till syre och socker", "Lagrar det som olja", "Bildar metan"], correct: 1, explain: "Vid fotosyntes tar växter upp CO₂ och vatten med hjälp av solljus och bildar socker (glukos) och syre." },
+// ===== QUIZ =====
+const QP=[
+{c:"Organisk kemi",q:"Vad handlar organisk kemi om?",o:["Metallernas kemi","Kolföreningarnas kemi","Gasernas kemi","Syrors kemi"],a:1,e:"Organisk kemi = kolföreningarnas kemi."},
+{c:"Kolatomen",q:"Hur många bindningar kan en kolatom max ha?",o:["2","3","4","6"],a:2,e:"4 valenselektroner → max 4 bindningar."},
+{c:"Kolväten",q:"Vad kallas molekyler med enbart kol och väte?",o:["Alkoholer","Kolväten","Estrar","Syror"],a:1,e:"Kolväten = enbart C + H."},
+{c:"Alkaner",q:"Molekylformeln för metan?",o:["C₂H₆","CH₄","C₃H₈","CH₃OH"],a:1,e:"Metan: 1C + 4H = CH₄."},
+{c:"Alkaner",q:"Alkan med 3 kolatomer?",o:["Etan","Butan","Propan","Pentan"],a:2,e:"Prop- = 3."},
+{c:"Alkaner",q:"Alkan med 8 kolatomer?",o:["Heptan","Hexan","Oktan","Nonan"],a:2,e:"Okt- = 8."},
+{c:"Prefix",q:"Prefix för 5?",o:["But-","Hex-","Pent-","Prop-"],a:2,e:"Pent- = 5 (pentagon)."},
+{c:"Prefix",q:"Prefix för 7?",o:["Hex-","Hept-","Okt-","Non-"],a:1,e:"Hept- = 7."},
+{c:"Prefix",q:"Vad betyder 'dek-'?",o:["8","9","10","12"],a:2,e:"Dek- = 10."},
+{c:"Bindningar",q:"Kolväten med dubbelbindning?",o:["Alkaner","Alkener","Alkyner","Alkoholer"],a:1,e:"Alkener = dubbelbindning = omättade."},
+{c:"Bindningar",q:"Kolväten med trippelbindning?",o:["Alkaner","Alkener","Alkyner","Estrar"],a:2,e:"Alkyner = trippelbindning (C≡C)."},
+{c:"Bindningar",q:"Mättade kolväten kallas?",o:["Alkener","Alkyner","Alkaner","Polymerer"],a:2,e:"Alkaner = enkelbindning = mättade."},
+{c:"Fossilt",q:"Fossila bränslen bildas av?",o:["Vulkanutbrott","Växt- & djurrester","Meteoriter","Havsvatten"],a:1,e:"Under högt tryck + temp i miljontals år."},
+{c:"Fossilt",q:"Villkor för fossila bränslen?",o:["Vatten+vind+sol","Högt tryck, hög temp, utan syre","Lågt tryck, med syre","Bakterier+ljus"],a:1,e:"Högt tryck + temp + syrefritt i årmiljoner."},
+{c:"Fossilt",q:"Exempel på fossila bränslen?",o:["Etanol, biogas","Olja, naturgas, stenkol","Sol, vind, vatten","Viskos, polyester"],a:1,e:"Olja, naturgas, stenkol, brunkol."},
+{c:"Destillation",q:"Högst upp i tornet?",o:["Asfalt","Bensin","Gaser","Diesel"],a:2,e:"Gaser = lägst kokpunkt = högst."},
+{c:"Destillation",q:"Råolja upphettas till?",o:["100°C","200°C","400°C","1000°C"],a:2,e:"Ca 400°C."},
+{c:"Destillation",q:"Längst ner i tornet?",o:["Gaser","Bensin","Fotogen","Asfalt & paraffin"],a:3,e:"Högst kokpunkt (~400°C)."},
+{c:"Destillation",q:"Produkterna separeras pga?",o:["Färg","Kokpunkt","Lukt","Vikt"],a:1,e:"Olika kokpunkter."},
+{c:"Destillation",q:"Bensin vid vilken temp?",o:["20°C","170-220°C","350°C","400°C"],a:1,e:"~170-220°C."},
+{c:"Alkoholer",q:"Funktionell grupp i alkoholer?",o:["COOH","OH","CO","NH₂"],a:1,e:"OH = hydroxylgrupp."},
+{c:"Alkoholer",q:"Glykol används till?",o:["Dricka","Hudkrämer","Kylarvätska","Bränsle"],a:2,e:"50/50 med vatten → -35°C."},
+{c:"Alkoholer",q:"Glycerol används i?",o:["Bensin","Hudkrämer & marsipan","Kylarvätska","Färg"],a:1,e:"Binder fukt."},
+{c:"Alkoholer",q:"OH-grupper i glykol?",o:["1","2","3","4"],a:1,e:"Tvåvärdig = 2 OH."},
+{c:"Alkoholer",q:"OH-grupper i glycerol?",o:["1","2","3","4"],a:2,e:"Trevärdig = 3 OH."},
+{c:"Alkoholer",q:"Vad innehåller T-röd?",o:["Ren metanol","Etanol + illasmakande ämnen","Glykol","Glycerol"],a:1,e:"Etanol + kräkmedel."},
+{c:"Alkoholer",q:"Vid metanolförgiftning?",o:["Bara yr","1/3 frisk, 1/3 blind, 1/3 dör","Alltid frisk","Ofarligt"],a:1,e:"Extremt giftigt."},
+{c:"Alkoholer",q:"Etanols formel?",o:["CH₃OH","C₂H₅OH","C₃H₇OH","C₂H₄"],a:1,e:"C₂H₅OH."},
+{c:"Alkoholer",q:"Metanols formel?",o:["CH₃OH","C₂H₅OH","CH₄","HCOOH"],a:0,e:"CH₃OH."},
+{c:"Alkoholer",q:"Propan + 3 OH = ?",o:["Metanol","Etanol","Glykol","Glycerol"],a:3,e:"Glycerol = propan + 3 OH."},
+{c:"Org. syror",q:"Alla org. syror innehåller?",o:["OH","NH₂","COOH","Dubbelbindning"],a:2,e:"Karboxylgrupp = COOH."},
+{c:"Org. syror",q:"Var finns myrsyra?",o:["Äpplen","Nässlor & myror","Mjölk","Potatis"],a:1,e:"Myrsyra = metansyra."},
+{c:"Org. syror",q:"Ättiksyras kemiska namn?",o:["Metansyra","Etansyra","Propansyra","Bensoesyra"],a:1,e:"Et- = 2 C."},
+{c:"Org. syror",q:"Ättiksyras formel?",o:["HCOOH","CH₃COOH","C₆H₅COOH","CH₃OH"],a:1,e:"CH₃COOH."},
+{c:"Org. syror",q:"Bensoesyra i vilka bär?",o:["Jordgubbar","Lingon, tranbär, hjortron","Blåbär","Äpplen"],a:1,e:"Naturlig hållbarhet."},
+{c:"Estrar",q:"Alkohol + karboxylsyra →?",o:["Alken","Polymer","Ester + vatten","Alkan"],a:2,e:"Alkohol + syra → ester + vatten."},
+{c:"Estrar",q:"Estrar används som?",o:["Bränsle","Smakämnen i glass & godis","Kylarvätska","Gödningsmedel"],a:1,e:"Smak & doft."},
+{c:"Estrar",q:"Iso-pentanol + ättiksyra → doft?",o:["Jordgubb","Banan","Citron","Vanilj"],a:1,e:"Banandoft!"},
+{c:"Estrar",q:"Naturliga smakämnen kallas?",o:["Polymerer","Essens","Alkener","Kolväten"],a:1,e:"Essens."},
+{c:"Polymerer",q:"Mest använda polymeren?",o:["Plast","Gummi","Papper (cellulosa)","Nylon"],a:2,e:"Cellulosa = glukosringar."},
+{c:"Polymerer",q:"Vad är en polymer?",o:["Kort molekyl","Monomerer i långa kedjor","Grundämne","Metall"],a:1,e:"Långa kedjor av monomerer."},
+{c:"Polymerer",q:"Naturliga polymerer?",o:["Plast & gummi","Cellulosa, DNA, proteiner","Bensin & diesel","Metanol & etanol"],a:1,e:"Cellulosa, DNA, proteiner."},
+{c:"Polymerer",q:"Glukosringar i cellulosa?",o:["100","1 500","15 000","150 000"],a:2,e:"Upp till 15 000."},
+{c:"Textilier",q:"Polyester kommer från?",o:["Trä","Olja","Bomull","Djurhår"],a:1,e:"Syntetisk fiber från olja."},
+{c:"Textilier",q:"Viskos görs av?",o:["Olja","Cellulosa (trä)","Djurhår","Gummi"],a:1,e:"Halvsyntetisk fiber."},
+{c:"Periodiska",q:"Ädelgasers valenselektroner?",o:["1","4","7","8 (fullt skal)"],a:3,e:"8 = stabila."},
+{c:"Periodiska",q:"Alkalimetaller valenselektroner?",o:["1","2","4","7"],a:0,e:"Grupp 1 = 1 VE."},
+{c:"Periodiska",q:"Halogener valenselektroner?",o:["1","4","7","8"],a:2,e:"Grupp 17 = 7 VE."},
+{c:"Periodiska",q:"Grupp = gemensamt?",o:["Elektronskall","Valenselektroner","Vikt","Färg"],a:1,e:"Lika antal VE."},
+{c:"Periodiska",q:"Period = gemensamt?",o:["VE","Elektronskal","Protoner","Egenskaper"],a:1,e:"Lika antal skal."},
+{c:"Kretslopp",q:"Fotosyntes: CO₂ →?",o:["Mer CO₂","Socker + O₂","Olja","Metan"],a:1,e:"CO₂ + H₂O + sol → socker + O₂."},
+{c:"Kretslopp",q:"Växthusgaser?",o:["O₂, N₂, Ar","CO₂, metan, vattenånga","Ozon, He","CO₂, O₂, N₂"],a:1,e:"CO₂, CH₄, vattenånga."},
+{c:"Kretslopp",q:"Cellandning?",o:["Fotosyntes","Socker+O₂→CO₂+H₂O+E","Destillation","Polymerisering"],a:1,e:"Bryter ner socker → energi."},
+{c:"Miljö",q:"Etanol bättre pga?",o:["Luktar bättre","Ej nytt kol i kretslopp","Billigare","Brinner långsammare"],a:1,e:"Kol redan upptaget via fotosyntes."},
+{c:"Miljö",q:"Förstärkt växthuseffekt orsakas av?",o:["Solen","Fossila bränslen","Vulkaner","Månen"],a:1,e:"Mer CO₂ → starkare effekt."},
+{c:"Lab",q:"Labbrapportens delar?",o:["Bara resultat","Hypotes→material→genomförande→risk→felkällor→resultat→analys","Namn+datum","Hypotes+resultat"],a:1,e:"Alla 7 delar behövs."},
+// Sant/falskt
+{c:"S/F",q:"Metan är en viktig växthusgas.",t:"tf",a:true,e:"CH₄ = kraftig växthusgas."},
+{c:"S/F",q:"Diamant och grafit är rent kol.",t:"tf",a:true,e:"Allotroper — samma ämne, olika struktur."},
+{c:"S/F",q:"Kolväten löses lätt i vatten.",t:"tf",a:false,e:"Opolära → svårlösliga i vatten."},
+{c:"S/F",q:"Etanol är beroendeframkallande.",t:"tf",a:true,e:"Ja, extra farligt för unga."},
+{c:"S/F",q:"Biogas är fossilt.",t:"tf",a:false,e:"Förnybar (biologiskt avfall)."},
+{c:"S/F",q:"Fossila bränslen bildas på hundra år.",t:"tf",a:false,e:"MILJONTALS år."},
+{c:"S/F",q:"Bensin har högre kokpunkt än diesel.",t:"tf",a:false,e:"Bensin ~170°C < diesel ~300°C."},
+{c:"S/F",q:"Cellandning = motsats till fotosyntes.",t:"tf",a:true,e:"Fotosyntes bygger upp, cellandning bryter ner."},
+{c:"S/F",q:"Naturliga växthuseffekten är skadlig.",t:"tf",a:false,e:"Naturlig = nödvändig. Förstärkt = problem."},
+{c:"S/F",q:"Plast & gummi = syntetiska polymerer.",t:"tf",a:true,e:"Tillverkas av människan."},
+{c:"S/F",q:"95-oktan innehåller upp till 10% etanol.",t:"tf",a:true,e:"Stämmer."},
+{c:"S/F",q:"Estrar kan bara göras kemiskt.",t:"tf",a:false,e:"Finns naturligt (essens)."},
+{c:"S/F",q:"Alkalimetaller i grupp 17.",t:"tf",a:false,e:"Grupp 1. Halogener = grupp 17."},
+{c:"S/F",q:"Alkoholer är brännbara & giftiga.",t:"tf",a:true,e:"Generellt ja."},
+{c:"S/F",q:"Eten (C₂H₄) = alken.",t:"tf",a:true,e:"Et- + dubbelbindning."},
+{c:"S/F",q:"Fotosyntes kräver solljus.",t:"tf",a:true,e:"Sol = energikälla."},
 ];
+const QPR=15;let qi=0,qans=false,qs=[],qco=0,qwr=0;
+function qInit(){qs=shuffle(QP).slice(0,QPR);qi=0;qco=0;qwr=0;document.getElementById('qcard').innerHTML='<div class="quiz-category" id="qcat"></div><div class="quiz-question" id="qq"></div><div class="quiz-options" id="qo"></div><div class="quiz-feedback" id="qf"><div id="qft"></div><div class="quiz-explanation" id="qe"></div></div><button class="quiz-next" id="qn" onclick="qNext()">Nästa fråga →</button>';qProg();qRender()}
+function qProg(){const c=document.getElementById('qp');c.innerHTML='';qs.forEach((_,i)=>{const d=document.createElement('div');d.className='quiz-dot'+(i===qi?' current':'');c.appendChild(d)})}
+function qRender(){if(qi>=qs.length){qResults();return}qans=false;const q=qs[qi];document.getElementById('qcat').textContent=q.c;document.getElementById('qq').textContent=q.q;document.getElementById('qf').className='quiz-feedback';document.getElementById('qn').className='quiz-next';const oc=document.getElementById('qo');oc.innerHTML='';if(q.t==='tf'){const d=document.createElement('div');d.className='tf-buttons';['Sant','Falskt'].forEach((l,i)=>{const b=document.createElement('button');b.className='tf-btn';b.textContent=l;b.onclick=()=>qTF(i===0,q.a,q.e);d.appendChild(b)});oc.appendChild(d)}else{q.o.forEach((o,i)=>{const b=document.createElement('button');b.className='quiz-option';b.textContent=o;b.onclick=()=>qAns(i,q.a,q.e);oc.appendChild(b)})}qProg()}
+function qAns(s,a,e){if(qans)return;qans=true;document.querySelectorAll('.quiz-option').forEach((o,i)=>{o.classList.add('revealed');if(i===a)o.classList.add('correct-answer');if(i===s&&i!==a)o.classList.add('wrong-answer')});qFB(s===a,e)}
+function qTF(s,a,e){if(qans)return;qans=true;const bs=document.querySelectorAll('.tf-btn');bs.forEach(b=>b.classList.add('revealed'));const ok=s===a;if(a){bs[0].classList.add('correct-answer');if(!ok)bs[1].classList.add('wrong-answer')}else{bs[1].classList.add('correct-answer');if(!ok)bs[0].classList.add('wrong-answer')}qFB(ok,e)}
+function qFB(ok,e){document.getElementById('qf').className='quiz-feedback show '+(ok?'correct-fb':'wrong-fb');document.getElementById('qft').textContent=ok?'✓ Rätt!':'✗ Fel!';document.getElementById('qe').textContent=e;document.getElementById('qn').className='quiz-next show';score(ok);if(ok)qco++;else qwr++;const ds=document.querySelectorAll('.quiz-dot');if(ds[qi]){ds[qi].classList.remove('current');ds[qi].classList.add(ok?'done':'wrong-dot')}}
+function qNext(){qi++;qRender()}
+function qResults(){const p=Math.round(qco/QPR*100);document.getElementById('qcard').innerHTML=`<div class="results-card"><div class="results-score">${p>=80?'🏆':p>=60?'👍':'💪'} ${p}%</div><div class="results-text">${qco} av ${QPR} rätt</div><div class="results-detail">Frågebank: ${QP.length} frågor</div><button class="btn-primary" onclick="qInit()" style="margin-top:20px">Ny omgång →</button></div>`}
 
-let quizIndex = 0;
-let quizAnswered = false;
-let shuffledQuiz = [];
-
-function shuffleArray(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function initQuiz() {
-  shuffledQuiz = shuffleArray(quizQuestions);
-  quizIndex = 0;
-  renderQuizProgress();
-  renderQuestion();
-}
-
-function renderQuizProgress() {
-  const container = document.getElementById('quiz-progress');
-  container.innerHTML = '';
-  shuffledQuiz.forEach((_, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'quiz-dot' + (i === quizIndex ? ' current' : '');
-    container.appendChild(dot);
-  });
-}
-
-function renderQuestion() {
-  if (quizIndex >= shuffledQuiz.length) {
-    showQuizResults();
-    return;
-  }
-  quizAnswered = false;
-  const q = shuffledQuiz[quizIndex];
-  document.getElementById('quiz-category').textContent = q.cat;
-  document.getElementById('quiz-question').textContent = q.q;
-  document.getElementById('quiz-feedback').className = 'quiz-feedback';
-  document.getElementById('quiz-next').className = 'quiz-next';
-
-  const optContainer = document.getElementById('quiz-options');
-  optContainer.innerHTML = '';
-
-  if (q.type === 'tf') {
-    const div = document.createElement('div');
-    div.className = 'tf-buttons';
-    ['Sant', 'Falskt'].forEach((label, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'tf-btn';
-      btn.textContent = label;
-      btn.onclick = () => answerTF(i === 0, q.correct, q.explain);
-      div.appendChild(btn);
-    });
-    optContainer.appendChild(div);
-  } else {
-    q.options.forEach((opt, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'quiz-option';
-      btn.textContent = opt;
-      btn.onclick = () => answerQuiz(i, q.correct, q.explain);
-      optContainer.appendChild(btn);
-    });
-  }
-  renderQuizProgress();
-}
-
-function answerQuiz(selected, correct, explain) {
-  if (quizAnswered) return;
-  quizAnswered = true;
-  const options = document.querySelectorAll('.quiz-option');
-  options.forEach((o, i) => {
-    o.classList.add('revealed');
-    if (i === correct) o.classList.add('correct-answer');
-    if (i === selected && i !== correct) o.classList.add('wrong-answer');
-  });
-  showFeedback(selected === correct, explain);
-}
-
-function answerTF(selectedTrue, correctAnswer, explain) {
-  if (quizAnswered) return;
-  quizAnswered = true;
-  const btns = document.querySelectorAll('.tf-btn');
-  btns.forEach(b => b.classList.add('revealed'));
-  const isCorrect = selectedTrue === correctAnswer;
-  if (correctAnswer) { btns[0].classList.add('correct-answer'); if (!isCorrect) btns[1].classList.add('wrong-answer'); }
-  else { btns[1].classList.add('correct-answer'); if (!isCorrect) btns[0].classList.add('wrong-answer'); }
-  showFeedback(isCorrect, explain);
-}
-
-function showFeedback(isCorrect, explain) {
-  const fb = document.getElementById('quiz-feedback');
-  const fbText = document.getElementById('quiz-feedback-text');
-  const fbExplain = document.getElementById('quiz-explanation');
-  fb.className = 'quiz-feedback show ' + (isCorrect ? 'correct-fb' : 'wrong-fb');
-  fbText.textContent = isCorrect ? '✓ Rätt!' : '✗ Fel!';
-  fbExplain.textContent = explain;
-  document.getElementById('quiz-next').className = 'quiz-next show';
-  updateScore(isCorrect);
-
-  // update dot
-  const dots = document.querySelectorAll('.quiz-dot');
-  if (dots[quizIndex]) {
-    dots[quizIndex].classList.remove('current');
-    dots[quizIndex].classList.add(isCorrect ? 'done' : 'wrong-dot');
-  }
-}
-
-function nextQuestion() {
-  quizIndex++;
-  renderQuestion();
-}
-
-function showQuizResults() {
-  const card = document.getElementById('quiz-card');
-  const pct = Math.round((totalCorrect / shuffledQuiz.length) * 100);
-  let emoji = pct >= 80 ? '🏆' : pct >= 60 ? '👍' : '💪';
-  card.innerHTML = `<div class="results-card">
-    <div class="results-score">${emoji} ${pct}%</div>
-    <div class="results-text">${totalCorrect} av ${shuffledQuiz.length} rätt</div>
-    <div class="results-detail">Bästa streak: ${streak}</div>
-    <button class="btn-primary" onclick="resetQuiz()" style="margin-top:24px;">Försök igen</button>
-  </div>`;
-}
-
-function resetQuiz() {
-  totalCorrect = 0; totalWrong = 0; streak = 0;
-  document.getElementById('score-correct').textContent = 0;
-  document.getElementById('score-wrong').textContent = 0;
-  document.getElementById('score-streak').textContent = 0;
-  document.getElementById('quiz-card').innerHTML = `
-    <div class="quiz-category" id="quiz-category"></div>
-    <div class="quiz-question" id="quiz-question"></div>
-    <div class="quiz-options" id="quiz-options"></div>
-    <div class="quiz-feedback" id="quiz-feedback"><div id="quiz-feedback-text"></div><div class="quiz-explanation" id="quiz-explanation"></div></div>
-    <button class="quiz-next" id="quiz-next" onclick="nextQuestion()">Nästa fråga →</button>`;
-  initQuiz();
-}
-
-// ================ MATCHING — PREFIX ================
-const prefixPairs = [
-  { prefix: 'Met-', num: '1' },
-  { prefix: 'Et-', num: '2' },
-  { prefix: 'Prop-', num: '3' },
-  { prefix: 'But-', num: '4' },
-  { prefix: 'Pent-', num: '5' },
-  { prefix: 'Hex-', num: '6' },
-  { prefix: 'Hept-', num: '7' },
-  { prefix: 'Okt-', num: '8' },
+// ===== FILL IN BLANK =====
+const FIB=[
+{q:"Organisk kemi handlar om _____ kemi.",a:["kolföreningarnas","kolföreningar"],h:"Vilka föreningar?"},
+{q:"En kolatom kan max ha ___ bindningar.",a:["4","fyra"],h:"Antal valenselektroner?"},
+{q:"Enbart kol och väte = _____.",a:["kolväten"],h:"Kol + väte"},
+{q:"Metan har formeln _____.",a:["ch4","ch₄"],h:"1C + 4H"},
+{q:"Prefix för 3 kolatomer: _____.",a:["prop","prop-"],h:"Propan..."},
+{q:"Alkaner har _____bindningar.",a:["enkel","enkelbindningar","enkelbindning"],h:"Mättade"},
+{q:"Alkener har _____bindningar.",a:["dubbel","dubbelbindning","dubbelbindningar"],h:"Omättade"},
+{q:"Alkoholer har minst en ___-grupp.",a:["oh"],h:"Hydroxyl..."},
+{q:"Organiska syror har en ___-grupp.",a:["cooh","karboxyl","karboxylgrupp"],h:"Karboxyl..."},
+{q:"Metanol kallas också _____.",a:["träsprit"],h:"Trä + sprit"},
+{q:"Ester bildas av alkohol + _____.",a:["karboxylsyra","organisk syra","syra"],h:"Vilken syra?"},
+{q:"Vid fotosyntes tar växter upp ___.",a:["co2","koldioxid","co₂"],h:"Vilken gas?"},
+{q:"Råolja upphettas till ca ___°C.",a:["400"],h:"Fyrahundra"},
+{q:"Glykol är en ___värdig alkohol.",a:["två","tvåvärdig","2"],h:"Antal OH"},
+{q:"Ättiksyra heter kemiskt _____.",a:["etansyra"],h:"Et- + syra"},
+{q:"Cellulosa kan ha upp till _____ glukosringar.",a:["15000","15 000"],h:"Femton tusen"},
+{q:"Förstärkt växthuseffekt → global _____.",a:["uppvärmning"],h:"Temperaturen stiger"},
+{q:"Oordnat kol kallas _____ kol.",a:["amorft"],h:"A-m-o-r-f-t"},
+{q:"Prefix för 6 kolatomer: _____.",a:["hex","hex-"],h:"Hexagon"},
+{q:"Etyn kallas också _____.",a:["acetylen"],h:"Svetsgas"},
 ];
+let fibCur=[];
+function fibInit(){fibCur=shuffle(FIB).slice(0,8);const a=document.getElementById('fib-area');a.innerHTML=fibCur.map((f,i)=>`<div class="card" id="fib-${i}"><div style="font-size:1.1rem;font-weight:600;margin-bottom:10px">${f.q.replace(/_+/g,'<span style="color:var(--accent2)">_____</span>')}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input class="fib-input" id="fi-${i}" placeholder="Skriv svar..." onkeydown="if(event.key==='Enter')fibChk(${i})"><button class="btn-primary" style="margin:0;padding:10px 20px" onclick="fibChk(${i})">Kolla</button></div><div class="fib-hint">${f.h}</div><div id="ffb-${i}" style="margin-top:8px;font-weight:600;display:none"></div></div>`).join('')}
+function fibChk(i){const inp=document.getElementById('fi-'+i);const fb=document.getElementById('ffb-'+i);const v=inp.value.trim().toLowerCase();if(!v)return;const ok=fibCur[i].a.some(a=>v===a.toLowerCase());inp.classList.add(ok?'correct-input':'wrong-input');fb.style.display='block';fb.style.color=ok?'var(--correct)':'var(--wrong)';fb.textContent=ok?'✓ Rätt!':'✗ Fel — rätt: '+fibCur[i].a[0];inp.disabled=true;score(ok)}
 
-let matchSelected = null;
-let matchedPairs = 0;
+// ===== MATCHING =====
+function mkMatch(pairs,area,selVar){
+  window[selVar]=null;const el=document.getElementById(area);const l=shuffle(pairs),r=shuffle(pairs);
+  el.innerHTML=`<div class="match-grid"><div><div class="match-col-title">${pairs[0].lt||'Vänster'}</div>${l.map(p=>`<div class="match-item" onclick="mClk(this,'l','${p.id}','${selVar}')">${p.l}</div>`).join('')}</div><div><div class="match-col-title">${pairs[0].rt||'Höger'}</div>${r.map(p=>`<div class="match-item" onclick="mClk(this,'r','${p.id}','${selVar}')">${p.r}</div>`).join('')}</div></div>`}
+function mClk(el,t,id,sv){if(el.classList.contains('matched'))return;if(!window[sv]){window[sv]={el,t,id};el.classList.add('selected')}else if(window[sv].t===t){window[sv].el.classList.remove('selected');window[sv]={el,t,id};el.classList.add('selected')}else{if(window[sv].id===id){window[sv].el.classList.remove('selected');window[sv].el.classList.add('matched');el.classList.add('matched');score(true)}else{el.classList.add('wrong-match');window[sv].el.classList.add('wrong-match');const p=window[sv].el;score(false);setTimeout(()=>{p.classList.remove('wrong-match','selected');el.classList.remove('wrong-match')},400)}window[sv]=null}}
+const MP=[{id:'1',l:'Met-',r:'1',lt:'Prefix',rt:'Antal C'},{id:'2',l:'Et-',r:'2',lt:'Prefix',rt:'Antal C'},{id:'3',l:'Prop-',r:'3',lt:'Prefix',rt:'Antal C'},{id:'4',l:'But-',r:'4',lt:'Prefix',rt:'Antal C'},{id:'5',l:'Pent-',r:'5',lt:'Prefix',rt:'Antal C'},{id:'6',l:'Hex-',r:'6',lt:'Prefix',rt:'Antal C'},{id:'7',l:'Hept-',r:'7',lt:'Prefix',rt:'Antal C'},{id:'8',l:'Okt-',r:'8',lt:'Prefix',rt:'Antal C'}];
+function matchInit(){mkMatch(MP,'match-area','ms1')}
+const AP=[{id:'m',l:'Metan',r:'CH₄',lt:'Namn',rt:'Formel'},{id:'e',l:'Etan',r:'C₂H₆',lt:'Namn',rt:'Formel'},{id:'p',l:'Propan',r:'C₃H₈',lt:'Namn',rt:'Formel'},{id:'b',l:'Butan',r:'C₄H₁₀',lt:'Namn',rt:'Formel'},{id:'pe',l:'Pentan',r:'C₅H₁₂',lt:'Namn',rt:'Formel'},{id:'h',l:'Hexan',r:'C₆H₁₄',lt:'Namn',rt:'Formel'}];
+function match2Init(){mkMatch(AP,'match2-area','ms2')}
+const FG=[{id:'al',l:'Alkohol',r:'OH-grupp',lt:'Ämnestyp',rt:'Kännetecken'},{id:'sy',l:'Organisk syra',r:'COOH-grupp',lt:'Ämnestyp',rt:'Kännetecken'},{id:'an',l:'Alkan',r:'Enkelbindning',lt:'Ämnestyp',rt:'Kännetecken'},{id:'en',l:'Alken',r:'Dubbelbindning',lt:'Ämnestyp',rt:'Kännetecken'},{id:'yn',l:'Alkyn',r:'Trippelbindning',lt:'Ämnestyp',rt:'Kännetecken'},{id:'es',l:'Ester',r:'Alkohol + syra',lt:'Ämnestyp',rt:'Kännetecken'}];
+function match3Init(){mkMatch(FG,'match3-area','ms3')}
 
-function initMatching() {
-  matchSelected = null;
-  matchedPairs = 0;
-  const area = document.getElementById('match-game-area');
-  const left = shuffleArray(prefixPairs);
-  const right = shuffleArray(prefixPairs);
+// ===== SORTING =====
+const SD={zones:[{id:'a',t:'Naturlig polymer',c:'za'},{id:'b',t:'Syntetisk polymer',c:'zb'},{id:'c',t:'Fossilt bränsle',c:'zc'},{id:'d',t:'Alkohol',c:'zd'}],items:[{n:'Cellulosa',z:'a'},{n:'DNA',z:'a'},{n:'Proteiner',z:'a'},{n:'Plast',z:'b'},{n:'Gummi',z:'b'},{n:'Polyester',z:'b'},{n:'Stenkol',z:'c'},{n:'Naturgas',z:'c'},{n:'Råolja',z:'c'},{n:'Metanol',z:'d'},{n:'Etanol',z:'d'},{n:'Glycerol',z:'d'}]};
+let sSel=null;
+function sortInit(){sSel=null;const a=document.getElementById('sort-area');const items=shuffle(SD.items);a.innerHTML=`<div class="sort-items-pool" id="sp">${items.map((it,i)=>`<div class="sort-item" id="si-${i}" data-z="${it.z}" onclick="siClk(this,${i})">${it.n}</div>`).join('')}</div><div class="sort-zones">${SD.zones.map(z=>`<div class="sort-zone ${z.c}" onclick="szClk('${z.id}')"><div class="sort-zone-title">${z.t}</div><div id="szc-${z.id}"></div></div>`).join('')}</div><button class="btn-primary" onclick="sChk()" style="width:100%">Kontrollera ✓</button>`}
+function siClk(el,i){if(el.classList.contains('sort-used'))return;document.querySelectorAll('.sort-item').forEach(e=>e.classList.remove('sort-selected'));el.classList.add('sort-selected');sSel={el,z:el.dataset.z}}
+function szClk(zid){if(!sSel)return;const c=document.getElementById('szc-'+zid);const s=document.createElement('span');s.className='sort-placed';s.textContent=sSel.el.textContent;s.dataset.c=sSel.z;s.dataset.p=zid;c.appendChild(s);sSel.el.classList.remove('sort-selected');sSel.el.classList.add('sort-used');sSel=null}
+function sChk(){document.querySelectorAll('.sort-placed').forEach(s=>{const ok=s.dataset.c===s.dataset.p;s.classList.add(ok?'sort-correct':'sort-wrong');score(ok)})}
 
-  area.innerHTML = `
-    <div class="match-grid">
-      <div>
-        <div class="match-col-title">Prefix</div>
-        ${left.map(p => `<div class="match-item" data-type="prefix" data-id="${p.prefix}" onclick="matchClick(this,'prefix','${p.prefix}')" style="margin-bottom:8px;">${p.prefix}</div>`).join('')}
-      </div>
-      <div>
-        <div class="match-col-title">Antal C-atomer</div>
-        ${right.map(p => `<div class="match-item" data-type="num" data-id="${p.prefix}" onclick="matchClick(this,'num','${p.prefix}')" style="margin-bottom:8px;">${p.num}</div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function matchClick(el, type, id) {
-  if (el.classList.contains('matched')) return;
-  if (!matchSelected) {
-    matchSelected = { el, type, id };
-    el.classList.add('selected');
-  } else {
-    if (matchSelected.type === type) {
-      matchSelected.el.classList.remove('selected');
-      matchSelected = { el, type, id };
-      el.classList.add('selected');
-    } else {
-      if (matchSelected.id === id) {
-        matchSelected.el.classList.remove('selected');
-        matchSelected.el.classList.add('matched');
-        el.classList.add('matched');
-        matchedPairs++;
-        updateScore(true);
-      } else {
-        el.classList.add('wrong-match');
-        matchSelected.el.classList.add('wrong-match');
-        const prev = matchSelected.el;
-        updateScore(false);
-        setTimeout(() => { prev.classList.remove('wrong-match','selected'); el.classList.remove('wrong-match'); }, 500);
-      }
-      matchSelected = null;
-    }
-  }
-}
-
-// ================ MATCHING — ALKANES ================
-const alkanePairs = [
-  { name: 'Metan', formula: 'CH₄' },
-  { name: 'Etan', formula: 'C₂H₆' },
-  { name: 'Propan', formula: 'C₃H₈' },
-  { name: 'Butan', formula: 'C₄H₁₀' },
-  { name: 'Pentan', formula: 'C₅H₁₂' },
-  { name: 'Hexan', formula: 'C₆H₁₄' },
+// ===== REACTIONS =====
+const RX=[
+{eq:'CO₂ + H₂O + solenergi → ___ + O₂',b:['socker/glukos'],ch:['socker/glukos','metan','etanol','olja'],l:'Fotosyntes'},
+{eq:'Socker + O₂ → ___ + H₂O + energi',b:['CO₂'],ch:['CO₂','O₂','CH₄','N₂'],l:'Cellandning'},
+{eq:'Alkohol + karboxylsyra → ___ + vatten',b:['ester'],ch:['ester','alkan','alken','polymer'],l:'Esterbildning'},
+{eq:'___ + syre → karboxylsyra',b:['alkohol'],ch:['alkohol','alkan','ester','polymer'],l:'Oxidation'},
+{eq:'CH₄ + 2O₂ → ___ + 2H₂O',b:['CO₂'],ch:['CO₂','CO','CH₃OH','C₂H₆'],l:'Metanförbränning'},
 ];
+function reactInit(){const rx=shuffle(RX);document.getElementById('react-area').innerHTML=rx.map((r,i)=>{const ch=shuffle(r.ch);return`<div class="card"><div style="font-family:'Space Mono',monospace;font-size:.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:3px;margin-bottom:8px">${r.l}</div><div class="reaction-eq">${r.eq.replace('___',`<span class="reaction-blank" id="rb-${i}">?</span>`)}</div><div class="reaction-choices">${ch.map(c=>`<div class="reaction-choice" onclick="rcClk(${i},this,'${c.replace(/'/g,"\\'")}')">${c}</div>`).join('')}</div><div id="rfb-${i}" style="font-weight:600;display:none;margin-top:8px"></div></div>`}).join('')}
+function rcClk(i,el,val){if(el.classList.contains('r-used'))return;const bl=document.getElementById('rb-'+i);bl.textContent=val;bl.classList.add('filled');el.classList.add('r-used');const ok=RX[i].b[0].toLowerCase()===val.toLowerCase();bl.classList.add(ok?'r-correct':'r-wrong');const fb=document.getElementById('rfb-'+i);fb.style.display='block';fb.style.color=ok?'var(--correct)':'var(--wrong)';fb.textContent=ok?'✓ Rätt!':'✗ Fel — rätt: '+RX[i].b[0];score(ok)}
 
-let alkaneSelected = null;
+// ===== TOWER =====
+const TP=[{n:'Gaser',s:0},{n:'Bensin',s:1},{n:'Fotogen',s:2},{n:'Dieselolja',s:3},{n:'Tung eldningsolja',s:4},{n:'Asfalt & paraffin',s:5}];
+let tS=null,tSl=[null,null,null,null,null,null];
+function towerInit(){tS=null;tSl=[null,null,null,null,null,null];const a=document.getElementById('tower-area');const sh=shuffle(TP);const temps=['20°C','170°C','220°C','300°C','350°C','400°C'];a.innerHTML=`<div class="tower">${temps.map((t,i)=>`<div class="tower-slot" id="ts-${i}" onclick="tsClk(${i})"><span class="temp">${t}</span><span id="tst-${i}">?</span></div>`).join('')}<div style="text-align:center;padding:10px;font-family:'Space Mono',monospace;font-size:.6rem;color:var(--accent3)">↑ Låg kokpunkt · ↓ Hög kokpunkt</div></div><div class="tower-items"><div style="font-family:'Space Mono',monospace;font-size:.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:3px;margin-bottom:8px">Produkter</div>${sh.map(p=>`<div class="tower-drag-item" id="ti-${p.s}" onclick="tiClk(${p.s})">${p.n}</div>`).join('')}<button class="btn-primary" onclick="tChk()" style="margin-top:12px;width:100%">Kontrollera ✓</button></div>`}
+function tiClk(s){const el=document.getElementById('ti-'+s);if(el.classList.contains('placed'))return;document.querySelectorAll('.tower-drag-item').forEach(e=>e.classList.remove('selected-tower'));el.classList.add('selected-tower');tS=s}
+function tsClk(si){if(tS===null||tSl[si]!==null)return;tSl[si]=tS;document.getElementById('tst-'+si).textContent=TP[tS].n;document.getElementById('ts-'+si).classList.add('filled');document.getElementById('ti-'+tS).classList.add('placed');document.getElementById('ti-'+tS).classList.remove('selected-tower');tS=null}
+function tChk(){for(let i=0;i<6;i++){const s=document.getElementById('ts-'+i);if(tSl[i]===i){s.classList.add('correct-slot');score(true)}else{s.classList.add('wrong-slot');document.getElementById('tst-'+i).textContent=(tSl[i]!==null?TP[tSl[i]].n+' ← ':'')+TP[i].n;score(false)}}}
 
-function initAlkaneMatching() {
-  alkaneSelected = null;
-  const area = document.getElementById('match-alkane-area');
-  const left = shuffleArray(alkanePairs);
-  const right = shuffleArray(alkanePairs);
-  area.innerHTML = `
-    <div class="match-grid">
-      <div>
-        <div class="match-col-title">Namn</div>
-        ${left.map(p => `<div class="match-item" data-aid="${p.name}" onclick="alkaneClick(this,'name','${p.name}')" style="margin-bottom:8px;">${p.name}</div>`).join('')}
-      </div>
-      <div>
-        <div class="match-col-title">Molekylformel</div>
-        ${right.map(p => `<div class="match-item" data-aid="${p.name}" onclick="alkaneClick(this,'formula','${p.name}')" style="margin-bottom:8px;">${p.formula}</div>`).join('')}
-      </div>
-    </div>`;
-}
+// ===== MEMORY =====
+const memP=[{a:'Metan',b:'CH₄'},{a:'Etanol',b:'C₂H₅OH'},{a:'Metanol',b:'CH₃OH'},{a:'Ättiksyra',b:'CH₃COOH'},{a:'Myrsyra',b:'HCOOH'},{a:'Propan',b:'C₃H₈'},{a:'Eten',b:'C₂H₄'},{a:'Butan',b:'C₄H₁₀'}];
+let mC=[],mF=[],mM=0,mL=false;
+function memInit(){mM=0;mF=[];mL=false;const ps=shuffle(memP).slice(0,6);mC=shuffle([...ps.map((p,i)=>({id:i,t:p.a,tp:'a'})),...ps.map((p,i)=>({id:i,t:p.b,tp:'b'}))]);document.getElementById('mem-grid').innerHTML=mC.map((c,i)=>`<div class="memory-card" id="mc-${i}" onclick="memClk(${i})"><span class="mem-hidden">?</span></div>`).join('')}
+function memClk(i){if(mL)return;const el=document.getElementById('mc-'+i);if(el.classList.contains('mem-flipped')||el.classList.contains('mem-matched'))return;el.classList.add('mem-flipped');el.innerHTML=mC[i].t;mF.push(i);if(mF.length===2){mL=true;const[a,b]=mF;const ca=mC[a],cb=mC[b];if(ca.id===cb.id&&ca.tp!==cb.tp){setTimeout(()=>{document.getElementById('mc-'+a).classList.add('mem-matched');document.getElementById('mc-'+b).classList.add('mem-matched');mF=[];mL=false;mM++;score(true)},500)}else{setTimeout(()=>{['mc-'+a,'mc-'+b].forEach(id=>{const e=document.getElementById(id);e.classList.remove('mem-flipped');e.innerHTML='<span class="mem-hidden">?</span>'});mF=[];mL=false;score(false)},900)}}}
 
-function alkaneClick(el, type, id) {
-  if (el.classList.contains('matched')) return;
-  if (!alkaneSelected) {
-    alkaneSelected = { el, type, id };
-    el.classList.add('selected');
-  } else {
-    if (alkaneSelected.type === type) {
-      alkaneSelected.el.classList.remove('selected');
-      alkaneSelected = { el, type, id };
-      el.classList.add('selected');
-    } else {
-      if (alkaneSelected.id === id) {
-        alkaneSelected.el.classList.remove('selected');
-        alkaneSelected.el.classList.add('matched');
-        el.classList.add('matched');
-        updateScore(true);
-      } else {
-        el.classList.add('wrong-match');
-        alkaneSelected.el.classList.add('wrong-match');
-        const prev = alkaneSelected.el;
-        updateScore(false);
-        setTimeout(() => { prev.classList.remove('wrong-match','selected'); el.classList.remove('wrong-match'); }, 500);
-      }
-      alkaneSelected = null;
-    }
-  }
-}
-
-// ================ DESTILLATION TOWER ================
-const towerProducts = [
-  { name: 'Gaser', temp: '20°C', slot: 0 },
-  { name: 'Bensin', temp: '170°C', slot: 1 },
-  { name: 'Fotogen', temp: '220°C', slot: 2 },
-  { name: 'Dieselolja', temp: '300°C', slot: 3 },
-  { name: 'Tung eldningsolja', temp: '350°C', slot: 4 },
-  { name: 'Asfalt & paraffin', temp: '400°C', slot: 5 },
+// ===== FLASHCARDS =====
+const FC=[
+{t:'Metan',f:'CH₄',fr:'Enklaste kolvätet',bk:'<strong>Alkan</strong> (1C). Gas, viktig växthusgas. Finns i naturgas & biogas. 4 enkelbindningar.'},
+{t:'Metanol',f:'CH₃OH',fr:'Träsprit',bk:'<strong>Envärd alkohol</strong> (1 OH). Lösningsmedel, motorbränsle. MYCKET giftigt: 1/3 frisk, 1/3 blind, 1/3 dör.'},
+{t:'Etanol',f:'C₂H₅OH',fr:'Mest kända alkoholen',bk:'<strong>Envärd alkohol</strong>. Dryck, bränsle, T-röd. Beroendeframkallande. Hjärnan ej klar förrän 20-25 år.'},
+{t:'Glykol',f:'C₂H₄(OH)₂',fr:'Tvåvärdig alkohol',bk:'<strong>2 OH-grupper</strong> (etan-baserad). Kylarvätska: 50/50 med vatten → -35°C. Giftigt.'},
+{t:'Glycerol',f:'C₃H₅(OH)₃',fr:'Trevärdig alkohol',bk:'<strong>3 OH-grupper</strong> (propan). Binder fukt. Hudkrämer, salvor, marsipan, snus.'},
+{t:'Myrsyra',f:'HCOOH',fr:'Metansyra',bk:'<strong>Organisk syra</strong> (COOH). Finns i brännässlor & rödmyror. Uppkallad efter myror!'},
+{t:'Ättiksyra',f:'CH₃COOH',fr:'Etansyra',bk:'<strong>Organisk syra</strong>. Smak & hållbarhet i mat. Ättika. Et- = 2 kolatomer.'},
+{t:'Bensoesyra',f:'C₆H₅COOH',fr:'Naturlig konservering',bk:'<strong>Organisk syra</strong>. Lingon, tranbär, hjortron. Naturligt konserveringsmedel.'},
+{t:'Estrar',f:'Alk+syra→ester+H₂O',fr:'Smakämnen',bk:'Alkohol + karboxylsyra → ester + vatten. Godis, glass, läsk. Iso-pentanol+ättiksyra = banan. Naturligt = essens.'},
+{t:'Eten',f:'C₂H₄',fr:'Alken — dubbelbindning',bk:'<strong>Omättat</strong> (C=C). Plast (polyeten). Reagerar lätt.'},
+{t:'Etyn',f:'C₂H₂',fr:'Acetylen — trippelbindning',bk:'<strong>Alkyn</strong> (C≡C). Svetsning. Explosivt!'},
+{t:'Cellulosa',f:'(C₆H₁₀O₅)ₙ',fr:'Mest använda polymeren',bk:'<strong>Naturlig polymer</strong>. Upp till 15 000 glukosringar → fibrer. Papper, trä, bomull.'},
+{t:'Fotosyntes',f:'CO₂+H₂O+sol→glukos+O₂',fr:'Växternas process',bk:'Växter tar upp CO₂ + vatten + solljus → socker + syre. Bygger upp organiskt material.'},
+{t:'Cellandning',f:'Glukos+O₂→CO₂+H₂O+E',fr:'Motsats till fotosyntes',bk:'Celler bryter ner socker med syre → CO₂ + vatten + energi. Alla levande organismer.'},
 ];
+let fcI=0;
+function fcRender(){const c=FC[fcI];document.getElementById('fc-c').textContent=`${fcI+1} / ${FC.length}`;document.getElementById('fc-f').innerHTML=`<div class="flashcard-title">${c.t}</div><div class="flashcard-formula">${c.f}</div><div class="flashcard-hint">${c.fr}</div><div style="margin-top:16px;font-size:.75rem;color:var(--text-dim)">Klicka för att vända</div>`;document.getElementById('fc-b').innerHTML=`<div class="flashcard-back-content">${c.bk}</div>`;document.getElementById('fc').classList.remove('flipped')}
+function fcFlip(){document.getElementById('fc').classList.toggle('flipped')}
+function fcNext(){fcI=(fcI+1)%FC.length;fcRender()}
+function fcPrev(){fcI=(fcI-1+FC.length)%FC.length;fcRender()}
 
-let towerSelectedItem = null;
-let towerSlots = [null, null, null, null, null, null];
+// ===== TIMED =====
+let tmInt=null,tmSec=60,tmSc=0,tmQ=[];
+function timedStart(){tmQ=shuffle(QP.filter(q=>!q.t));tmSc=0;tmSec=60;const a=document.getElementById('timed-area');a.innerHTML=`<div class="timer-text" id="tt">60s</div><div class="timer-bar"><div class="timer-fill" id="tf" style="width:100%"></div></div><div style="text-align:center;font-family:'Space Mono',monospace;font-size:2rem;font-weight:800;color:var(--accent4);margin-bottom:12px" id="tsc">0</div><div class="card" id="tc"></div>`;tmRQ(0);tmInt=setInterval(()=>{tmSec--;document.getElementById('tt').textContent=tmSec+'s';const p=tmSec/60*100;const f=document.getElementById('tf');f.style.width=p+'%';if(tmSec<=10)f.classList.add('urgent');if(tmSec<=0){clearInterval(tmInt);tmEnd()}},1000)}
+let tmI=0;
+function tmRQ(i){tmI=i;if(i>=tmQ.length){tmEnd();return}const q=tmQ[i];document.getElementById('tc').innerHTML=`<div class="quiz-category">${q.c}</div><div class="quiz-question">${q.q}</div><div class="quiz-options">${q.o.map((o,j)=>`<button class="quiz-option" onclick="tmAns(${j},${q.a})">${o}</button>`).join('')}</div>`}
+function tmAns(s,a){const ok=s===a;if(ok)tmSc++;document.getElementById('tsc').textContent=tmSc;score(ok);document.querySelectorAll('#tc .quiz-option').forEach((o,i)=>{if(i===a)o.classList.add('correct-answer');if(i===s&&i!==a)o.classList.add('wrong-answer')});setTimeout(()=>tmRQ(tmI+1),350)}
+function tmEnd(){clearInterval(tmInt);document.getElementById('timed-area').innerHTML=`<div class="results-card card"><div class="results-score">⏱️ ${tmSc}</div><div class="results-text">poäng på 60 sekunder!</div><div class="results-detail">${tmSc>=15?'Fantastiskt! 🏆':tmSc>=10?'Bra jobbat! 👍':'Fortsätt öva! 💪'}</div><button class="btn-primary" onclick="timedStart()" style="margin-top:20px">Försök igen →</button></div>`}
 
-function initTower() {
-  towerSelectedItem = null;
-  towerSlots = [null, null, null, null, null, null];
-  const area = document.getElementById('tower-area');
-  const shuffled = shuffleArray(towerProducts);
-  const temps = ['20°C', '170°C', '220°C', '300°C', '350°C', '400°C'];
+// ===== SUMMARY =====
+function sumRender(){const t=[
+{t:'Organisk kemi',c:'= <strong>kolföreningarnas kemi</strong>. Alltid <strong>kol (C)</strong>, ofta <strong>väte (H)</strong>, ibland O, N, halogener, P, S. Enbart C+H = <strong>kolväten</strong>.'},
+{t:'Kolatomen',c:'Nr 6, <strong>4 valenselektroner → max 4 bindningar</strong>. Rent kol: <strong>diamant</strong>, <strong>grafit</strong>, <strong>fulleren</strong>, kolnanorör, grafen. Amorft = oordnat (stenkol, träkol, aktivt kol).'},
+{t:'Kolets kretslopp',c:'<strong>Fotosyntes:</strong> CO₂+H₂O+sol → socker+O₂<br><strong>Cellandning:</strong> Socker+O₂ → CO₂+H₂O+energi<br><strong>Lagring:</strong> Ej nedbrutet → torv, kol, olja, naturgas'},
+{t:'Växthuseffekten',c:'<strong>Naturlig:</strong> Nödvändig! Gaser: <strong>CO₂, metan, vattenånga</strong><br><strong>Förstärkt:</strong> Fossila bränslen → mer CO₂ → <strong>global uppvärmning</strong>'},
+{t:'Fossila bränslen & destillation',c:'Växt/djurrester + <strong>högt tryck + hög temp + utan syre</strong> i årmiljoner.<br><strong>Destillation:</strong> Råolja → 400°C → Gaser(20°C) → Bensin(170°C) → Fotogen(220°C) → Diesel(300°C) → Eldningsolja(350°C) → Asfalt(400°C)'},
+{t:'Prefix',c:'<span class="summary-formula">Met-</span>(1) <span class="summary-formula">Et-</span>(2) <span class="summary-formula">Prop-</span>(3) <span class="summary-formula">But-</span>(4) <span class="summary-formula">Pent-</span>(5) <span class="summary-formula">Hex-</span>(6) <span class="summary-formula">Hept-</span>(7) <span class="summary-formula">Okt-</span>(8) <span class="summary-formula">Non-</span>(9) <span class="summary-formula">Dek-</span>(10)<br>Alkan=<strong>-an</strong>(enkel) Alken=<strong>-en</strong>(dubbel) Alkyn=<strong>-yn</strong>(trippel)'},
+{t:'Alkaner (mättade)',c:'Enkelbindningar. Opolära. <strong>Metan</strong> <span class="summary-formula">CH₄</span> | <strong>Etan</strong> <span class="summary-formula">C₂H₆</span> | <strong>Propan</strong> <span class="summary-formula">C₃H₈</span>(gasol) | <strong>Butan</strong> <span class="summary-formula">C₄H₁₀</span>(tändare). Fast: asfalt, vax, paraffin.'},
+{t:'Alkener & alkyner',c:'<strong>Alkener:</strong> C=C. Eten <span class="summary-formula">C₂H₄</span> → plast<br><strong>Alkyner:</strong> C≡C. Etyn <span class="summary-formula">C₂H₂</span> → svetsning, explosivt'},
+{t:'Polymerer',c:'Monomerer i <strong>långa kedjor</strong>. <strong>Naturliga:</strong> cellulosa, DNA, proteiner. <strong>Syntetiska:</strong> plast, gummi, polyester. <strong>Papper</strong> = cellulosa = 15 000 glukosringar. Textilier: viskos(trä), polyester(olja), elastan(olja).'},
+{t:'Alkoholer',c:'Minst 1 <strong>OH-grupp</strong>. Brännbara, giftiga, ofärgade.<br><strong>Metanol</strong> <span class="summary-formula">CH₃OH</span>(GIFTIGT!) | <strong>Etanol</strong> <span class="summary-formula">C₂H₅OH</span>(beroende) | <strong>Glykol</strong>(2OH,kylar) | <strong>Glycerol</strong>(3OH,fukt)'},
+{t:'Organiska syror',c:'<strong>COOH-grupp</strong>. Surt. Mot bakterier.<br><strong>Myrsyra</strong> <span class="summary-formula">HCOOH</span>(nässlor) | <strong>Ättiksyra</strong> <span class="summary-formula">CH₃COOH</span>(mat) | <strong>Bensoesyra</strong> <span class="summary-formula">C₆H₅COOH</span>(lingon)'},
+{t:'Estrar',c:'<strong>Alkohol + karboxylsyra → ester + vatten</strong>. Smak/doft i godis, glass. Kemiskt eller naturligt (essens). Banansmak = iso-pentanol + ättiksyra.'},
+{t:'Laboration',c:'<strong>Hypotes → Material → Genomförande → Riskanalys → Felkällor → Resultat → Analys</strong>'},
+];document.getElementById('sum-content').innerHTML=t.map(x=>`<div class="summary-topic card"><h3><span class="dot"></span>${x.t}</h3><div class="summary-content">${x.c}</div></div>`).join('')}
 
-  area.innerHTML = `
-    <div class="tower">
-      ${temps.map((t, i) => `<div class="tower-slot" id="tower-slot-${i}" onclick="towerSlotClick(${i})">
-        <span class="temp">${t}</span>
-        <span id="tower-slot-text-${i}">?</span>
-      </div>`).join('')}
-      <div style="text-align:center;padding:12px;font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--accent3);">↑ Låg kokpunkt<br>↓ Hög kokpunkt</div>
-    </div>
-    <div class="tower-items">
-      <div style="font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:3px;margin-bottom:8px;">Produkter att placera</div>
-      ${shuffled.map(p => `<div class="tower-drag-item" id="tower-item-${p.slot}" onclick="towerItemClick(${p.slot})">${p.name}</div>`).join('')}
-      <button class="btn-primary" onclick="checkTower()" style="margin-top:16px;width:100%;">Kontrollera ✓</button>
-    </div>`;
-}
-
-function towerItemClick(slot) {
-  const el = document.getElementById('tower-item-' + slot);
-  if (el.classList.contains('placed')) return;
-  document.querySelectorAll('.tower-drag-item').forEach(e => e.classList.remove('selected-tower'));
-  el.classList.add('selected-tower');
-  towerSelectedItem = slot;
-}
-
-function towerSlotClick(slotIndex) {
-  if (towerSelectedItem === null) return;
-  if (towerSlots[slotIndex] !== null) return;
-  const product = towerProducts[towerSelectedItem];
-  towerSlots[slotIndex] = towerSelectedItem;
-  document.getElementById('tower-slot-text-' + slotIndex).textContent = product.name;
-  document.getElementById('tower-slot-' + slotIndex).classList.add('filled');
-  document.getElementById('tower-item-' + towerSelectedItem).classList.add('placed');
-  document.getElementById('tower-item-' + towerSelectedItem).classList.remove('selected-tower');
-  towerSelectedItem = null;
-}
-
-function checkTower() {
-  for (let i = 0; i < 6; i++) {
-    const slot = document.getElementById('tower-slot-' + i);
-    if (towerSlots[i] === i) {
-      slot.classList.add('correct-slot');
-      updateScore(true);
-    } else {
-      slot.classList.add('wrong-slot');
-      if (towerSlots[i] !== null) {
-        document.getElementById('tower-slot-text-' + i).textContent +=
-          ' ← ' + towerProducts[i].name;
-      } else {
-        document.getElementById('tower-slot-text-' + i).textContent = towerProducts[i].name;
-      }
-      updateScore(false);
-    }
-  }
-}
-
-// ================ FLASHCARDS ================
-const flashcards = [
-  { title: 'Metanol', formula: 'CH₃OH', front: 'Kallas också träsprit', back: '<strong>Typ:</strong> Envärd alkohol (1 OH-grupp)<br><strong>Användning:</strong> Lösningsmedel, motorbränsle<br><strong>OBS:</strong> Mycket giftigt! 1/3 risk att bli frisk, 1/3 blind, 1/3 att dö vid förgiftning<br><strong>Strukturformel:</strong> H-C-O-H med 2 H på kolet' },
-  { title: 'Etanol', formula: 'C₂H₅OH', front: 'Den mest kända alkoholen', back: '<strong>Typ:</strong> Envärd alkohol (1 OH-grupp)<br><strong>Användning:</strong> I drycker, bränsle (E85), T-röd<br><strong>OBS:</strong> Beroendeframkallande, dödligt giftig i stora mängder<br><strong>Extra:</strong> Ungdomars hjärna inte färdig förrän 20-25 år — extra känslig' },
-  { title: 'Glykol', formula: 'C₂H₄(OH)₂', front: 'Tvåvärdig alkohol', back: '<strong>Typ:</strong> Tvåvärdig alkohol (2 OH-grupper)<br><strong>Baserad på:</strong> Etan med 2 OH-grupper<br><strong>Användning:</strong> Kylarvätska (50/50 med vatten klarar -35°C)<br><strong>OBS:</strong> Giftigt — propylenglykol ofta använd istället' },
-  { title: 'Glycerol', formula: 'C₃H₅(OH)₃', front: 'Trevärdig alkohol', back: '<strong>Typ:</strong> Trevärdig alkohol (3 OH-grupper)<br><strong>Baserad på:</strong> Propan med 3 OH-grupper<br><strong>Egenskap:</strong> Binder fukt (vattenmolekyler)<br><strong>Användning:</strong> Hudkrämer, salvor, marsipan, snus' },
-  { title: 'Metansyra', formula: 'HCOOH', front: 'Kallas också myrsyra', back: '<strong>Typ:</strong> Organisk syra (karboxylsyra)<br><strong>Funktionell grupp:</strong> COOH (karboxylgrupp)<br><strong>Finns naturligt:</strong> I brännässlor och rödmyror<br><strong>Namn:</strong> Myrsyra — efter myror!' },
-  { title: 'Ättiksyra', formula: 'CH₃COOH', front: 'Den vanligaste organiska syran', back: '<strong>Typ:</strong> Organisk syra (etansyra)<br><strong>Funktionell grupp:</strong> COOH<br><strong>Användning:</strong> Livsmedel (smak & hållbarhet), ättika<br><strong>Kemiskt namn:</strong> Etansyra' },
-  { title: 'Estrar', formula: 'Alkohol + syra', front: 'Smakämnen i godis och glass', back: '<strong>Bildas av:</strong> Alkohol + karboxylsyra → ester + vatten<br><strong>Användning:</strong> Smakämnen i glass, läsk, godis<br><strong>Exempel:</strong> iso-pentanol + ättiksyra → banandoft<br><strong>Naturligt:</strong> Kallas essens' },
-  { title: 'Eten (Etylen)', formula: 'C₂H₄', front: 'Omättat kolväte med dubbelbindning', back: '<strong>Typ:</strong> Alken (dubbelbindning)<br><strong>Användning:</strong> Plasttillverkning (polyeten)<br><strong>Egenskap:</strong> Reagerar lätt tack vare dubbelbindningen<br><strong>Bindning:</strong> C=C (omättat)' },
-  { title: 'Cellulosa', formula: '(C₆H₁₀O₅)ₙ', front: 'Den mest använda polymeren', back: '<strong>Typ:</strong> Naturlig polymer<br><strong>Uppbyggnad:</strong> Upp till 15 000 glukosringar i kedjor<br><strong>Bildar:</strong> Fibrer (papper, trä, bomull)<br><strong>Viskos:</strong> Halvsyntetisk textilfiber gjord av cellulosa' },
-];
-
-let fcIndex = 0;
-
-function renderFlashcard() {
-  const fc = flashcards[fcIndex];
-  document.getElementById('fc-counter').textContent = `${fcIndex + 1} / ${flashcards.length}`;
-  document.getElementById('fc-front').innerHTML = `
-    <div class="flashcard-title">${fc.title}</div>
-    <div class="flashcard-formula">${fc.formula}</div>
-    <div class="flashcard-hint">${fc.front}</div>
-    <div style="margin-top:20px;font-size:0.8rem;color:var(--text-dim);">Klicka för att vända</div>`;
-  document.getElementById('fc-back').innerHTML = `
-    <div class="flashcard-back-content">${fc.back}</div>`;
-  document.getElementById('flashcard').classList.remove('flipped');
-}
-
-function flipCard() { document.getElementById('flashcard').classList.toggle('flipped'); }
-function nextCard() { fcIndex = (fcIndex + 1) % flashcards.length; renderFlashcard(); }
-function prevCard() { fcIndex = (fcIndex - 1 + flashcards.length) % flashcards.length; renderFlashcard(); }
-
-// ================ SUMMARY ================
-function renderSummary() {
-  const topics = [
-    { title: 'Organisk kemi', content: 'Organisk kemi handlar om <strong>kolföreningarnas kemi</strong>. Organiska föreningar innehåller alltid <strong>kol (C)</strong> och ofta <strong>väte (H)</strong>, plus ibland syre, kväve, halogener, fosfor eller svavel. Molekyler med enbart kol och väte kallas <strong>kolväten</strong>.' },
-    { title: 'Kolatomen', content: 'Kol har <strong>atomnummer 6</strong> och <strong>4 valenselektroner</strong> → kan bilda max <strong>4 bindningar</strong>. Former av rent kol: <strong>diamant</strong> (hårt, kristallint), <strong>grafit</strong> (mjukt, lager), <strong>fulleren</strong> (bollformade), <strong>kolnanorör</strong> och <strong>grafen</strong>. Amorft kol = oordnade kolatomer (stenkol, träkol, aktivt kol).' },
-    { title: 'Kolets kretslopp', content: '<strong>Fotosyntes:</strong> CO₂ + H₂O + solenergi → socker + O₂ (växter tar upp koldioxid)<br><strong>Cellandning:</strong> Socker + O₂ → CO₂ + H₂O + energi (djur och växter andas)<br><strong>Nedbrytning:</strong> Organiskt material bryts ner → CO₂<br><strong>Fossilt kol:</strong> Om material inte bryts ner kan det lagras i miljontals år → torv, kol, olja, naturgas.' },
-    { title: 'Växthuseffekten', content: '<strong>Naturlig växthuseffekt:</strong> Nödvändig — håller jorden varm. <strong>Växthusgaser:</strong> koldioxid (CO₂), metan (CH₄), vattenånga.<br><strong>Förstärkt växthuseffekt:</strong> Förbränning av fossila bränslen → mer CO₂ → <strong>global uppvärmning</strong>.' },
-    { title: 'Fossila bränslen & destillation', content: 'Bildas av växt- och djurrester under <strong>högt tryck, hög temperatur, utan syre</strong> i miljontals år → olja, naturgas, stenkol, brunkol.<br><strong>Fraktionerad destillation:</strong> Råolja upphettas till 400°C. Ångor stiger uppåt i ett torn. Ämnen med <strong>låg kokpunkt</strong> stiger högst (gaser ~20°C). Längst ner: asfalt & paraffin (~400°C). Däremellan: bensin, fotogen, diesel, eldningsolja.' },
-    { title: 'Prefix & namngivning', content: '<span class="summary-formula">Met-</span> (1), <span class="summary-formula">Et-</span> (2), <span class="summary-formula">Prop-</span> (3), <span class="summary-formula">But-</span> (4), <span class="summary-formula">Pent-</span> (5), <span class="summary-formula">Hex-</span> (6), <span class="summary-formula">Hept-</span> (7), <span class="summary-formula">Okt-</span> (8), <span class="summary-formula">Non-</span> (9), <span class="summary-formula">Dek-</span> (10)<br>Alkaner slutar på <strong>-an</strong> (enkelbindning, mättade). Alkener slutar på <strong>-en</strong> (dubbelbindning, omättade).' },
-    { title: 'Alkaner (mättade kolväten)', content: 'Innehåller <strong>enbart enkelbindningar</strong>. Opolära → svårlösliga i vatten, löses i fetter.<br><strong>Metan</strong> <span class="summary-formula">CH₄</span> — enklast, viktig växthusgas<br><strong>Etan</strong> <span class="summary-formula">C₂H₆</span> — 2 kolatomer<br><strong>Propan</strong> <span class="summary-formula">C₃H₈</span> — gasol<br><strong>Butan</strong> <span class="summary-formula">C₄H₁₀</span> — tändare<br>Fast form: asfalt, vax, paraffin.' },
-    { title: 'Alkener & alkyner (omättade)', content: '<strong>Alkener:</strong> Dubbelbindning (C=C). Eten <span class="summary-formula">C₂H₄</span> — används i plast.<br><strong>Alkyner:</strong> Trippelbindning (C≡C). Etyn/acetylen <span class="summary-formula">C₂H₂</span> — explosivt, svetsning.' },
-    { title: 'Polymerer', content: 'Korta molekyler (monomerer) i <strong>långa kedjor</strong>.<br><strong>Naturliga:</strong> cellulosa, DNA, proteiner<br><strong>Syntetiska:</strong> plast, gummi<br><strong>Papper:</strong> Cellulosa = upp till 15 000 glukosringar i kedjor → fibrer.' },
-    { title: 'Alkoholer', content: 'Innehåller minst en <strong>OH-grupp</strong> (hydroxylgrupp). Brännbara, giftiga, ofärgade.<br><strong>Metanol</strong> <span class="summary-formula">CH₃OH</span> — träsprit, MYCKET giftigt<br><strong>Etanol</strong> <span class="summary-formula">C₂H₅OH</span> — i dryck & bränsle, beroendeframkallande<br><strong>Glykol</strong> — tvåvärdig (2 OH), kylarvätska<br><strong>Glycerol</strong> — trevärdig (3 OH), hudkrämer, marsipan.' },
-    { title: 'Organiska syror', content: 'Innehåller en <strong>karboxylgrupp (COOH)</strong>. Smakar surt. Skyddar mot bakterier.<br><strong>Metansyra/myrsyra</strong> <span class="summary-formula">HCOOH</span> — brännässlor, rödmyror<br><strong>Etansyra/ättiksyra</strong> <span class="summary-formula">CH₃COOH</span> — ättika, livsmedel<br><strong>Bensoesyra</strong> <span class="summary-formula">C₆H₅COOH</span> — lingon, tranbär, hjortron.' },
-    { title: 'Estrar', content: '<strong>Alkohol + karboxylsyra → ester + vatten</strong><br>Ger smak och doft åt godis, glass, läsk. Kan framställas kemiskt eller utvinnas naturligt (kallas då <strong>essens</strong>).<br>Exempel: iso-pentanol + ättiksyra → banansmak.' },
-    { title: 'Laboration (provet!)', content: 'Tänk på att kunna planera och dokumentera en laboration:<br><strong>Hypotes</strong> → <strong>Material</strong> → <strong>Genomförande</strong> → <strong>Riskanalys</strong> → <strong>Felkällor</strong> → <strong>Resultat</strong> → <strong>Analys</strong>' },
-  ];
-  const container = document.getElementById('summary-content');
-  container.innerHTML = topics.map(t => `
-    <div class="summary-topic card">
-      <h3><span class="dot"></span>${t.title}</h3>
-      <div class="summary-content">${t.content}</div>
-    </div>`).join('');
-}
-
-// ================ INIT ================
-initQuiz();
-initMatching();
-initAlkaneMatching();
-initTower();
-renderFlashcard();
-renderSummary();
+// ===== INIT =====
+qInit();fibInit();matchInit();match2Init();match3Init();sortInit();reactInit();towerInit();memInit();fcRender();sumRender();
 </script>
 </body>
 </html>
