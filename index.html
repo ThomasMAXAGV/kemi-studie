@@ -49,8 +49,6 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 .flashcard-back-content{text-align:left;font-size:.9rem;line-height:1.7}.flashcard-back-content strong{color:var(--accent)}
 .flashcard-nav{display:flex;gap:10px;justify-content:center}.flashcard-nav button{padding:10px 24px;border:2px solid var(--border);border-radius:100px;background:var(--surface);color:var(--text);font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .3s}.flashcard-nav button:hover{border-color:var(--accent);color:var(--accent)}
 .flashcard-counter{text-align:center;font-family:'Space Mono',monospace;color:var(--text-dim);font-size:.8rem;margin-bottom:12px}
-.fib-input{background:var(--surface2);border:2px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-family:'Outfit',sans-serif;font-size:1rem;width:100%;max-width:300px;outline:none;transition:all .3s}.fib-input:focus{border-color:var(--accent2)}.fib-input.correct-input{border-color:var(--correct);background:rgba(0,229,155,.08)}.fib-input.wrong-input{border-color:var(--wrong);background:rgba(255,107,107,.08)}
-.fib-hint{font-size:.8rem;color:var(--text-dim);margin-top:6px;font-style:italic}
 .memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:500px;margin:0 auto}
 .memory-card{aspect-ratio:1;border:2px solid var(--border);border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .3s;user-select:none;text-align:center;padding:8px}.memory-card:hover:not(.mem-flipped):not(.mem-matched){border-color:var(--accent2)}.memory-card.mem-flipped{border-color:var(--accent);background:rgba(0,229,155,.1);color:var(--accent)}.memory-card.mem-matched{border-color:var(--correct);background:rgba(0,229,155,.06);opacity:.5;cursor:default}
 .sort-zones{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}.sort-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:16px;min-height:100px;cursor:pointer;transition:border-color .3s}.sort-zone:hover{border-color:var(--accent2)}
@@ -78,7 +76,7 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 <div class="score-bar"><div class="score-item correct"><div class="num" id="sc">0</div><div class="label">Rätt</div></div><div class="score-item wrong"><div class="num" id="sw">0</div><div class="label">Fel</div></div><div class="score-item streak"><div class="num" id="ss">0</div><div class="label">Streak</div></div></div>
 <div class="nav" id="main-nav">
 <button class="nav-btn active" onclick="go('quiz',this)">🧪 Quiz</button>
-<button class="nav-btn" onclick="go('fill',this)">✏️ Fyll i</button>
+
 <button class="nav-btn" onclick="go('match',this)">🔗 Para ihop</button>
 <button class="nav-btn" onclick="go('sort',this)">📂 Sortera</button>
 <button class="nav-btn" onclick="go('reaction',this)">⚗️ Reaktioner</button>
@@ -89,7 +87,7 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 <button class="nav-btn" onclick="go('summary',this)">📖 Sammanfattning</button>
 </div>
 <div class="section active" id="s-quiz"><div class="section-title"><span class="icon">🧪</span> Quiz</div><div class="section-desc">15 slumpade frågor ur en bank på 80+. Ny omgång = nya frågor!</div><div class="quiz-progress" id="qp"></div><div class="card" id="qcard"><div class="quiz-category" id="qcat"></div><div class="quiz-question" id="qq"></div><div class="quiz-options" id="qo"></div><div class="quiz-feedback" id="qf"><div id="qft"></div><div class="quiz-explanation" id="qe"></div></div><button class="quiz-next" id="qn" onclick="qNext()">Nästa fråga →</button></div><div class="reset-section"><button class="btn-secondary" onclick="qInit()">↻ Ny omgång</button></div></div>
-<div class="section" id="s-fill"><div class="section-title"><span class="icon">✏️</span> Fyll i rätt svar</div><div class="section-desc">Skriv in det som saknas — utan flerval!</div><div id="fib-area"></div><div class="reset-section"><button class="btn-secondary" onclick="fibInit()">↻ Nya frågor</button></div></div>
+
 <div class="section" id="s-match"><div class="section-title"><span class="icon">🔗</span> Para ihop</div><div class="section-desc">Klicka ett objekt till vänster, sedan dess par till höger!</div><div id="match-area"></div><div class="reset-section"><button class="btn-secondary" onclick="matchInit()">↻ Starta om</button></div><div class="sub-section"><div class="sub-title">🧬 Alkaner → formler</div><div class="sub-desc">Para alkanens namn med rätt molekylformel!</div><div id="match2-area"></div><div class="reset-section"><button class="btn-secondary" onclick="match2Init()">↻ Starta om</button></div></div><div class="sub-section"><div class="sub-title">🔬 Funktionella grupper</div><div class="sub-desc">Para ämnestyp med rätt kännetecken!</div><div id="match3-area"></div><div class="reset-section"><button class="btn-secondary" onclick="match3Init()">↻ Starta om</button></div></div></div>
 <div class="section" id="s-sort"><div class="section-title"><span class="icon">📂</span> Sortera rätt</div><div class="section-desc">Klicka på ett ämne, sedan på rätt kategori!</div><div id="sort-area"></div><div class="reset-section"><button class="btn-secondary" onclick="sortInit()">↻ Ny sortering</button></div></div>
 <div class="section" id="s-reaction"><div class="section-title"><span class="icon">⚗️</span> Reaktionsformler</div><div class="section-desc">Fyll i det som saknas i reaktionerna!</div><div id="react-area"></div><div class="reset-section"><button class="btn-secondary" onclick="reactInit()">↻ Nya reaktioner</button></div></div>
@@ -192,31 +190,6 @@ function qNext(){qi++;qRender()}
 function qResults(){const p=Math.round(qco/QPR*100);document.getElementById('qcard').innerHTML=`<div class="results-card"><div class="results-score">${p>=80?'🏆':p>=60?'👍':'💪'} ${p}%</div><div class="results-text">${qco} av ${QPR} rätt</div><div class="results-detail">Frågebank: ${QP.length} frågor</div><button class="btn-primary" onclick="qInit()" style="margin-top:20px">Ny omgång →</button></div>`}
 
 // ===== FILL IN BLANK =====
-const FIB=[
-{q:"Organisk kemi handlar om _____ kemi.",a:["kolföreningarnas","kolföreningar"],h:"Vilka föreningar?"},
-{q:"En kolatom kan max ha ___ bindningar.",a:["4","fyra"],h:"Antal valenselektroner?"},
-{q:"Enbart kol och väte = _____.",a:["kolväten"],h:"Kol + väte"},
-{q:"Metan har formeln _____.",a:["ch4","ch₄"],h:"1C + 4H"},
-{q:"Prefix för 3 kolatomer: _____.",a:["prop","prop-"],h:"Propan..."},
-{q:"Alkaner har _____bindningar.",a:["enkel","enkelbindningar","enkelbindning"],h:"Mättade"},
-{q:"Alkener har _____bindningar.",a:["dubbel","dubbelbindning","dubbelbindningar"],h:"Omättade"},
-{q:"Alkoholer har minst en ___-grupp.",a:["oh"],h:"Hydroxyl..."},
-{q:"Organiska syror har en ___-grupp.",a:["cooh","karboxyl","karboxylgrupp"],h:"Karboxyl..."},
-{q:"Metanol kallas också _____.",a:["träsprit"],h:"Trä + sprit"},
-{q:"Ester bildas av alkohol + _____.",a:["karboxylsyra","organisk syra","syra"],h:"Vilken syra?"},
-{q:"Vid fotosyntes tar växter upp ___.",a:["co2","koldioxid","co₂"],h:"Vilken gas?"},
-{q:"Råolja upphettas till ca ___°C.",a:["400"],h:"Fyrahundra"},
-{q:"Glykol är en ___värdig alkohol.",a:["två","tvåvärdig","2"],h:"Antal OH"},
-{q:"Ättiksyra heter kemiskt _____.",a:["etansyra"],h:"Et- + syra"},
-{q:"Cellulosa kan ha upp till _____ glukosringar.",a:["15000","15 000"],h:"Femton tusen"},
-{q:"Förstärkt växthuseffekt → global _____.",a:["uppvärmning"],h:"Temperaturen stiger"},
-{q:"Oordnat kol kallas _____ kol.",a:["amorft"],h:"A-m-o-r-f-t"},
-{q:"Prefix för 6 kolatomer: _____.",a:["hex","hex-"],h:"Hexagon"},
-{q:"Etyn kallas också _____.",a:["acetylen"],h:"Svetsgas"},
-];
-let fibCur=[];
-function fibInit(){fibCur=shuffle(FIB).slice(0,8);const a=document.getElementById('fib-area');a.innerHTML=fibCur.map((f,i)=>`<div class="card" id="fib-${i}"><div style="font-size:1.1rem;font-weight:600;margin-bottom:10px">${f.q.replace(/_+/g,'<span style="color:var(--accent2)">_____</span>')}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input class="fib-input" id="fi-${i}" placeholder="Skriv svar..." onkeydown="if(event.key==='Enter')fibChk(${i})"><button class="btn-primary" style="margin:0;padding:10px 20px" onclick="fibChk(${i})">Kolla</button></div><div class="fib-hint">${f.h}</div><div id="ffb-${i}" style="margin-top:8px;font-weight:600;display:none"></div></div>`).join('')}
-function fibChk(i){const inp=document.getElementById('fi-'+i);const fb=document.getElementById('ffb-'+i);const v=inp.value.trim().toLowerCase();if(!v)return;const ok=fibCur[i].a.some(a=>v===a.toLowerCase());inp.classList.add(ok?'correct-input':'wrong-input');fb.style.display='block';fb.style.color=ok?'var(--correct)':'var(--wrong)';fb.textContent=ok?'✓ Rätt!':'✗ Fel — rätt: '+fibCur[i].a[0];inp.disabled=true;score(ok)}
 
 // ===== MATCHING =====
 function mkMatch(pairs,area,selVar){
@@ -312,7 +285,7 @@ function sumRender(){const t=[
 ];document.getElementById('sum-content').innerHTML=t.map(x=>`<div class="summary-topic card"><h3><span class="dot"></span>${x.t}</h3><div class="summary-content">${x.c}</div></div>`).join('')}
 
 // ===== INIT =====
-qInit();fibInit();matchInit();match2Init();match3Init();sortInit();reactInit();towerInit();memInit();fcRender();sumRender();
+qInit();matchInit();match2Init();match3Init();sortInit();reactInit();towerInit();memInit();fcRender();sumRender();
 </script>
 </body>
 </html>
