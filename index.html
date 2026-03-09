@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organisk Kemi — Studieapp År 8</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e17;
+  --surface: #131a2b;
+  --surface2: #1a2340;
+  --accent: #00e59b;
+  --accent2: #00b8ff;
+  --accent3: #ff6b6b;
+  --accent4: #ffd93d;
+  --text: #e8edf5;
+  --text-dim: #7a88a0;
+  --border: #253050;
+  --correct: #00e59b;
+  --wrong: #ff6b6b;
+  --radius: 16px;
+  --glow: 0 0 30px rgba(0,229,155,0.15);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Background effect */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(0,229,155,0.06) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(0,184,255,0.05) 0%, transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.app { position: relative; z-index: 1; }
+
+/* HEADER */
+.header {
+  text-align: center;
+  padding: 48px 24px 32px;
+  position: relative;
+}
+.header h1 {
+  font-size: clamp(2.2rem, 6vw, 3.8rem);
+  font-weight: 900;
+  letter-spacing: -2px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+.header p {
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  margin-top: 8px;
+  font-weight: 300;
+}
+.header .molecule-deco {
+  font-family: 'Space Mono', monospace;
+  color: var(--accent);
+  opacity: 0.3;
+  font-size: 0.85rem;
+  margin-top: 12px;
+  letter-spacing: 4px;
+}
+
+/* SCORE BAR */
+.score-bar {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 16px 24px;
+  margin: 0 auto 24px;
+  max-width: 500px;
+}
+.score-item {
+  text-align: center;
+}
+.score-item .num {
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: 'Space Mono', monospace;
+}
+.score-item .label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.score-item.correct .num { color: var(--correct); }
+.score-item.wrong .num { color: var(--wrong); }
+.score-item.streak .num { color: var(--accent4); }
+
+/* NAVIGATION */
+.nav {
+  display: flex;
+  gap: 8px;
+  padding: 8px 24px;
+  max-width: 900px;
+  margin: 0 auto 32px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav::-webkit-scrollbar { display: none; }
+.nav-btn {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: var(--surface);
+  color: var(--text-dim);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+.nav-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.nav-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: var(--bg);
+  border-color: transparent;
+  box-shadow: var(--glow);
+}
+
+/* SECTIONS */
+.section {
+  display: none;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+  animation: fadeIn 0.4s ease;
+}
+.section.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-title .icon {
+  font-size: 1.6rem;
+}
+.section-desc {
+  color: var(--text-dim);
+  margin-bottom: 28px;
+  font-weight: 300;
+}
+
+/* CARDS */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 20px;
+  transition: all 0.3s;
+}
+.card:hover {
+  border-color: rgba(0,229,155,0.3);
+}
+
+/* QUIZ */
+.quiz-progress {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+.quiz-dot {
+  flex: 1;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--border);
+  transition: all 0.3s;
+}
+.quiz-dot.done { background: var(--correct); }
+.quiz-dot.current { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+.quiz-dot.wrong-dot { background: var(--wrong); }
+
+.quiz-question {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.quiz-category {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 20px;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.quiz-option {
+  padding: 16px 20px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-align: left;
+  font-weight: 400;
+}
+.quiz-option:hover:not(.selected):not(.revealed) {
+  border-color: var(--accent2);
+  background: rgba(0,184,255,0.08);
+}
+.quiz-option.correct-answer {
+  border-color: var(--correct);
+  background: rgba(0,229,155,0.12);
+  color: var(--correct);
+}
+.quiz-option.wrong-answer {
+  border-color: var(--wrong);
+  background: rgba(255,107,107,0.12);
+  color: var(--wrong);
+}
+
+.quiz-feedback {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  display: none;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.correct-fb {
+  background: rgba(0,229,155,0.1);
+  border: 1px solid rgba(0,229,155,0.3);
+  color: var(--correct);
+}
+.quiz-feedback.wrong-fb {
+  background: rgba(255,107,107,0.1);
+  border: 1px solid rgba(255,107,107,0.3);
+  color: var(--wrong);
+}
+.quiz-explanation {
+  font-weight: 300;
+  color: var(--text-dim);
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+
+.quiz-next {
+  margin-top: 20px;
+  padding: 14px 36px;
+  border: none;
+  border-radius: 100px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: var(--bg);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: none;
+  transition: all 0.3s;
+}
+.quiz-next:hover { transform: scale(1.03); }
+.quiz-next.show { display: inline-block; }
+
+/* MATCHING GAME */
+.match-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.match-col-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+}
+.match-item {
+  padding: 14px 18px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  cursor: pointer;
+  transition: all 0.25s;
+  font-weight: 600;
+  text-align: center;
+  user-select: none;
+}
+.match-item:hover:not(.matched):not(.selected) {
+  border-color: var(--accent2);
+}
+.match-item.selected {
+  border-color: var(--accent);
+  background: rgba(0,229,155,0.12);
+  box-shadow: 0 0 16px rgba(0,229,155,0.2);
+}
+.match-item.matched {
+  border-color: var(--correct);
+  background: rgba(0,229,155,0.08);
+  opacity: 0.6;
+  cursor: default;
+}
+.match-item.wrong-match {
+  animation: shake 0.4s;
+  border-color: var(--wrong);
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+/* DESTILLATION TOWER */
+.tower-container {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+.tower {
+  width: 200px;
+  flex-shrink: 0;
+  background: linear-gradient(to bottom, #1a3a5c, #3a1a1a, #5c2a0a);
+  border-radius: 16px 16px 24px 24px;
+  border: 2px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.tower-slot {
+  padding: 16px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  transition: all 0.3s;
+  position: relative;
+}
+.tower-slot .temp {
+  position: absolute;
+  left: 6px;
+  top: 4px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--accent2);
+  opacity: 0.7;
+}
+.tower-slot.filled {
+  color: var(--text);
+  font-weight: 600;
+}
+.tower-slot.correct-slot {
+  background: rgba(0,229,155,0.15);
+  color: var(--correct);
+}
+.tower-slot.wrong-slot {
+  background: rgba(255,107,107,0.15);
+  color: var(--wrong);
+}
+.tower-slot.highlight {
+  background: rgba(0,184,255,0.15);
+  border-color: var(--accent2);
+}
+
+.tower-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.tower-drag-item {
+  padding: 14px 18px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  cursor: pointer;
+  transition: all 0.25s;
+  font-weight: 600;
+  text-align: center;
+  user-select: none;
+}
+.tower-drag-item:hover:not(.placed) {
+  border-color: var(--accent2);
+}
+.tower-drag-item.selected-tower {
+  border-color: var(--accent);
+  background: rgba(0,229,155,0.12);
+}
+.tower-drag-item.placed {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* FLASHCARDS */
+.flashcard {
+  perspective: 1000px;
+  height: 320px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+.flashcard.flipped .flashcard-inner {
+  transform: rotateY(180deg);
+}
+.flashcard-front, .flashcard-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+}
+.flashcard-front {
+  background: linear-gradient(135deg, var(--surface), var(--surface2));
+}
+.flashcard-back {
+  background: linear-gradient(135deg, var(--surface2), var(--surface));
+  transform: rotateY(180deg);
+}
+.flashcard-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.flashcard-formula {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.4rem;
+  color: var(--accent2);
+  margin-bottom: 16px;
+}
+.flashcard-hint {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+.flashcard-back-content {
+  text-align: left;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+.flashcard-back-content strong {
+  color: var(--accent);
+}
+.flashcard-nav {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.flashcard-nav button {
+  padding: 12px 28px;
+  border: 2px solid var(--border);
+  border-radius: 100px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.flashcard-nav button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.flashcard-counter {
+  text-align: center;
+  font-family: 'Space Mono', monospace;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+/* SUMMARY */
+.summary-topic {
+  margin-bottom: 24px;
+}
+.summary-topic h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.summary-topic h3 .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.summary-content {
+  color: var(--text-dim);
+  line-height: 1.8;
+  font-weight: 300;
+  padding-left: 20px;
+  border-left: 2px solid var(--border);
+}
+.summary-content strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.summary-formula {
+  font-family: 'Space Mono', monospace;
+  color: var(--accent2);
+  font-size: 0.9rem;
+}
+
+/* RESULTS */
+.results-card {
+  text-align: center;
+  padding: 48px 32px;
+}
+.results-score {
+  font-size: 4rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.results-text {
+  font-size: 1.3rem;
+  margin-top: 8px;
+  font-weight: 300;
+}
+.results-detail {
+  color: var(--text-dim);
+  margin-top: 16px;
+}
+
+/* BTN GENERAL */
+.btn-primary {
+  padding: 14px 36px;
+  border: none;
+  border-radius: 100px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: var(--bg);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 16px;
+}
+.btn-primary:hover { transform: scale(1.03); box-shadow: var(--glow); }
+
+.btn-secondary {
+  padding: 12px 28px;
+  border: 2px solid var(--border);
+  border-radius: 100px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .tower-container { flex-direction: column; align-items: center; }
+  .tower { width: 100%; max-width: 300px; }
+  .match-grid { grid-template-columns: 1fr; }
+  .header h1 { font-size: 2rem; }
+}
+
+/* TRUE/FALSE specific */
+.tf-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.tf-btn {
+  flex: 1;
+  padding: 16px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.tf-btn:hover:not(.revealed) {
+  border-color: var(--accent2);
+}
+.tf-btn.correct-answer { border-color: var(--correct); background: rgba(0,229,155,0.12); color: var(--correct); }
+.tf-btn.wrong-answer { border-color: var(--wrong); background: rgba(255,107,107,0.12); color: var(--wrong); }
+
+/* Reset button */
+.reset-section {
+  text-align: center;
+  margin-top: 20px;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- HEADER -->
+  <div class="header">
+    <h1>Organisk Kemi</h1>
+    <p>Interaktiv studieapp — År 8</p>
+    <div class="molecule-deco">C — H — O — N — S</div>
+  </div>
+
+  <!-- SCORE -->
+  <div class="score-bar">
+    <div class="score-item correct"><div class="num" id="score-correct">0</div><div class="label">Rätt</div></div>
+    <div class="score-item wrong"><div class="num" id="score-wrong">0</div><div class="label">Fel</div></div>
+    <div class="score-item streak"><div class="num" id="score-streak">0</div><div class="label">Streak</div></div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav">
+    <button class="nav-btn active" onclick="showSection('quiz')">🧪 Quiz</button>
+    <button class="nav-btn" onclick="showSection('matching')">🔗 Para ihop</button>
+    <button class="nav-btn" onclick="showSection('tower')">🏗️ Destillation</button>
+    <button class="nav-btn" onclick="showSection('flashcards')">🃏 Flashcards</button>
+    <button class="nav-btn" onclick="showSection('summary')">📖 Sammanfattning</button>
+  </div>
+
+  <!-- QUIZ SECTION -->
+  <div class="section active" id="section-quiz">
+    <div class="section-title"><span class="icon">🧪</span> Quiz</div>
+    <div class="section-desc">Testa dina kunskaper med flervalsfrågor och sant/falskt!</div>
+    <div class="quiz-progress" id="quiz-progress"></div>
+    <div class="card" id="quiz-card">
+      <div class="quiz-category" id="quiz-category"></div>
+      <div class="quiz-question" id="quiz-question"></div>
+      <div class="quiz-options" id="quiz-options"></div>
+      <div class="quiz-feedback" id="quiz-feedback">
+        <div id="quiz-feedback-text"></div>
+        <div class="quiz-explanation" id="quiz-explanation"></div>
+      </div>
+      <button class="quiz-next" id="quiz-next" onclick="nextQuestion()">Nästa fråga →</button>
+    </div>
+    <div class="reset-section">
+      <button class="btn-secondary" onclick="resetQuiz()">↻ Starta om quiz</button>
+    </div>
+  </div>
+
+  <!-- MATCHING SECTION -->
+  <div class="section" id="section-matching">
+    <div class="section-title"><span class="icon">🔗</span> Para ihop</div>
+    <div class="section-desc">Klicka på ett prefix och sedan rätt antal kolatomer!</div>
+    <div id="match-game-area"></div>
+    <div class="reset-section" style="margin-top:24px;">
+      <button class="btn-secondary" onclick="initMatching()">↻ Starta om</button>
+    </div>
+
+    <div style="margin-top: 40px;">
+      <div class="section-title" style="font-size:1.4rem;"><span class="icon">🧬</span> Para alkaner</div>
+      <div class="section-desc">Para alkannamnet med rätt molekylformel!</div>
+      <div id="match-alkane-area"></div>
+      <div class="reset-section" style="margin-top:16px;">
+        <button class="btn-secondary" onclick="initAlkaneMatching()">↻ Starta om</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOWER SECTION -->
+  <div class="section" id="section-tower">
+    <div class="section-title"><span class="icon">🏗️</span> Destillationstornet</div>
+    <div class="section-desc">Klicka på en produkt och sedan på rätt plats i tornet. Produkter med lägst kokpunkt hamnar högst upp!</div>
+    <div class="tower-container" id="tower-area"></div>
+    <div class="reset-section" style="margin-top:24px;">
+      <button class="btn-secondary" onclick="initTower()">↻ Starta om</button>
+    </div>
+  </div>
+
+  <!-- FLASHCARDS -->
+  <div class="section" id="section-flashcards">
+    <div class="section-title"><span class="icon">🃏</span> Flashcards — Alkoholer & mer</div>
+    <div class="section-desc">Klicka på kortet för att vända! Lär dig viktiga föreningar.</div>
+    <div class="flashcard-counter" id="fc-counter"></div>
+    <div class="flashcard" id="flashcard" onclick="flipCard()">
+      <div class="flashcard-inner" id="flashcard-inner">
+        <div class="flashcard-front" id="fc-front"></div>
+        <div class="flashcard-back" id="fc-back"></div>
+      </div>
+    </div>
+    <div class="flashcard-nav">
+      <button onclick="prevCard()">← Föregående</button>
+      <button onclick="nextCard()">Nästa →</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="section" id="section-summary">
+    <div class="section-title"><span class="icon">📖</span> Sammanfattning</div>
+    <div class="section-desc">Alla nyckelbegrepp du behöver kunna till provet.</div>
+    <div id="summary-content"></div>
+  </div>
+</div>
+
+<script>
+// ================ STATE ================
+let totalCorrect = 0;
+let totalWrong = 0;
+let streak = 0;
+
+function updateScore(correct) {
+  if (correct) { totalCorrect++; streak++; }
+  else { totalWrong++; streak = 0; }
+  document.getElementById('score-correct').textContent = totalCorrect;
+  document.getElementById('score-wrong').textContent = totalWrong;
+  document.getElementById('score-streak').textContent = streak;
+}
+
+// ================ NAVIGATION ================
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ================ QUIZ ================
+const quizQuestions = [
+  { cat: "Organisk kemi", q: "Vad handlar organisk kemi om?", options: ["Metallernas kemi", "Kolföreningarnas kemi", "Gasernas kemi", "Syrors kemi"], correct: 1, explain: "Organisk kemi är vetenskapen om kolföreningarnas kemi." },
+  { cat: "Kolatomen", q: "Hur många bindningar kan en kolatom som max ha?", options: ["2", "3", "4", "6"], correct: 2, explain: "Kol har 4 valenselektroner och kan bilda max 4 bindningar." },
+  { cat: "Kolväten", q: "Vad kallas organiska molekyler som enbart innehåller kol och väte?", options: ["Alkoholer", "Kolväten", "Estrar", "Syror"], correct: 1, explain: "Kolväten består av enbart kol (C) och väte (H)." },
+  { cat: "Alkaner", q: "Vad är molekylformeln för metan?", options: ["C₂H₆", "CH₄", "C₃H₈", "CH₃OH"], correct: 1, explain: "Metan har 1 kolatom och 4 väteatomer: CH₄." },
+  { cat: "Alkaner", q: "Vad heter alkanen med 3 kolatomer?", options: ["Etan", "Butan", "Propan", "Pentan"], correct: 2, explain: "Prop- = 3 kolatomer, alltså propan." },
+  { cat: "Sant/Falskt", q: "Metan är en av de viktigaste växthusgaserna.", type: "tf", correct: true, explain: "Metan (CH₄) är en kraftig växthusgas, mycket starkare än CO₂ per molekyl." },
+  { cat: "Prefix", q: "Vilket prefix betyder 5 kolatomer?", options: ["But-", "Hex-", "Pent-", "Prop-"], correct: 2, explain: "Pent- = 5 (tänk pentagon = femhörning)." },
+  { cat: "Bindningar", q: "Vad kallas kolväten med dubbelbindningar?", options: ["Alkaner", "Alkener", "Alkyner", "Alkoholer"], correct: 1, explain: "Alkener har dubbelbindningar och är omättade kolväten." },
+  { cat: "Sant/Falskt", q: "Diamant och grafit är båda former av rent kol.", type: "tf", correct: true, explain: "Diamant, grafit och fulleren är alla allotroper av kol — rent kol i olika strukturer." },
+  { cat: "Fossila bränslen", q: "Vad bildas fossila bränslen av?", options: ["Vulkanutbrott", "Rester av växter och djur", "Meteoriter", "Havsvatten"], correct: 1, explain: "Fossila bränslen bildas av rester av växter och djur under högt tryck och temperatur i miljontals år." },
+  { cat: "Destillation", q: "Vid fraktionerad destillation, vilken produkt hamnar högst upp i tornet?", options: ["Asfalt", "Bensin", "Gaser", "Dieselolja"], correct: 2, explain: "Gaser har lägst kokpunkt och stiger högst upp i tornet." },
+  { cat: "Alkoholer", q: "Vilken funktionell grupp kännetecknar alla alkoholer?", options: ["COOH", "OH", "CO", "NH₂"], correct: 1, explain: "Alkoholer innehåller minst en hydroxylgrupp (OH)." },
+  { cat: "Sant/Falskt", q: "Metanol kallas också för träsprit och är mycket giftigt.", type: "tf", correct: true, explain: "Metanol (CH₃OH) är mycket giftigt. Förgiftning kan orsaka blindhet eller döden." },
+  { cat: "Alkoholer", q: "Vad används glykol främst till?", options: ["Dricka", "Hudkrämer", "Kylarvätska", "Bränsle"], correct: 2, explain: "Glykol (etylenglykol) blandas med vatten och används som kylarvätska i bilar." },
+  { cat: "Alkoholer", q: "Glycerol är en trevärdig alkohol. Vad används den i?", options: ["Bensin", "Hudkrämer och marsipan", "Kylarvätska", "Färg"], correct: 1, explain: "Glycerol binder fukt och används i hudkrämer, salvor, marsipan och snus." },
+  { cat: "Organiska syror", q: "Vad innehåller alla organiska syror?", options: ["En OH-grupp", "En NH₂-grupp", "En karboxylgrupp (COOH)", "En dubbbelbindning"], correct: 2, explain: "Organiska syror (karboxylsyror) innehåller alltid en COOH-grupp." },
+  { cat: "Organiska syror", q: "Var finns metansyra (myrsyra) naturligt?", options: ["I äpplen", "I brännässlor och rödmyror", "I mjölk", "I potatis"], correct: 1, explain: "Myrsyra finns i brännässlor och rödmyror — därav namnet!" },
+  { cat: "Estrar", q: "Vad bildas när en alkohol reagerar med en karboxylsyra?", options: ["En alken", "En polymer", "En ester + vatten", "En alkan"], correct: 2, explain: "Alkohol + karboxylsyra → ester + vatten. Estrar ger smak i godis och glass." },
+  { cat: "Sant/Falskt", q: "Kolväten är lätta att lösa i vatten.", type: "tf", correct: false, explain: "Kolväten är opolära och svårlösliga i vatten, men löser sig bra i fetter." },
+  { cat: "Kolets kretslopp", q: "Vilka tre växthusgaser nämns i materialet?", options: ["Syre, kväve, argon", "Koldioxid, metan, vattenånga", "Ozon, helium, neon", "Koldioxid, syre, kväve"], correct: 1, explain: "De viktigaste växthusgaserna är koldioxid (CO₂), metan (CH₄) och vattenånga." },
+  { cat: "Polymerer", q: "Vilket ämne är den mest använda polymeren?", options: ["Plast", "Gummi", "Papper (cellulosa)", "Nylon"], correct: 2, explain: "Papper är gjort av cellulosa som är uppbyggt av glukosringar — en naturlig polymer." },
+  { cat: "Sant/Falskt", q: "Etanol är beroendeframkallande och särskilt farligt för ungdomars hjärna.", type: "tf", correct: true, explain: "Hjärnan är inte färdigutvecklad förrän 20-25 års ålder, vilket gör alkohol extra farligt för unga." },
+  { cat: "Periodiska systemet", q: "Hur många valenselektroner har ädelgaser?", options: ["1", "4", "7", "8 (fullt yttre skal)"], correct: 3, explain: "Ädelgaser har 8 valenselektroner (fullt yttersta skal), vilket gör dem stabila och oreaktiva." },
+  { cat: "Kolets kretslopp", q: "Vad gör växterna med CO₂ vid fotosyntes?", options: ["Släpper ut mer CO₂", "Omvandlar det till syre och socker", "Lagrar det som olja", "Bildar metan"], correct: 1, explain: "Vid fotosyntes tar växter upp CO₂ och vatten med hjälp av solljus och bildar socker (glukos) och syre." },
+];
+
+let quizIndex = 0;
+let quizAnswered = false;
+let shuffledQuiz = [];
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function initQuiz() {
+  shuffledQuiz = shuffleArray(quizQuestions);
+  quizIndex = 0;
+  renderQuizProgress();
+  renderQuestion();
+}
+
+function renderQuizProgress() {
+  const container = document.getElementById('quiz-progress');
+  container.innerHTML = '';
+  shuffledQuiz.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'quiz-dot' + (i === quizIndex ? ' current' : '');
+    container.appendChild(dot);
+  });
+}
+
+function renderQuestion() {
+  if (quizIndex >= shuffledQuiz.length) {
+    showQuizResults();
+    return;
+  }
+  quizAnswered = false;
+  const q = shuffledQuiz[quizIndex];
+  document.getElementById('quiz-category').textContent = q.cat;
+  document.getElementById('quiz-question').textContent = q.q;
+  document.getElementById('quiz-feedback').className = 'quiz-feedback';
+  document.getElementById('quiz-next').className = 'quiz-next';
+
+  const optContainer = document.getElementById('quiz-options');
+  optContainer.innerHTML = '';
+
+  if (q.type === 'tf') {
+    const div = document.createElement('div');
+    div.className = 'tf-buttons';
+    ['Sant', 'Falskt'].forEach((label, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'tf-btn';
+      btn.textContent = label;
+      btn.onclick = () => answerTF(i === 0, q.correct, q.explain);
+      div.appendChild(btn);
+    });
+    optContainer.appendChild(div);
+  } else {
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'quiz-option';
+      btn.textContent = opt;
+      btn.onclick = () => answerQuiz(i, q.correct, q.explain);
+      optContainer.appendChild(btn);
+    });
+  }
+  renderQuizProgress();
+}
+
+function answerQuiz(selected, correct, explain) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const options = document.querySelectorAll('.quiz-option');
+  options.forEach((o, i) => {
+    o.classList.add('revealed');
+    if (i === correct) o.classList.add('correct-answer');
+    if (i === selected && i !== correct) o.classList.add('wrong-answer');
+  });
+  showFeedback(selected === correct, explain);
+}
+
+function answerTF(selectedTrue, correctAnswer, explain) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const btns = document.querySelectorAll('.tf-btn');
+  btns.forEach(b => b.classList.add('revealed'));
+  const isCorrect = selectedTrue === correctAnswer;
+  if (correctAnswer) { btns[0].classList.add('correct-answer'); if (!isCorrect) btns[1].classList.add('wrong-answer'); }
+  else { btns[1].classList.add('correct-answer'); if (!isCorrect) btns[0].classList.add('wrong-answer'); }
+  showFeedback(isCorrect, explain);
+}
+
+function showFeedback(isCorrect, explain) {
+  const fb = document.getElementById('quiz-feedback');
+  const fbText = document.getElementById('quiz-feedback-text');
+  const fbExplain = document.getElementById('quiz-explanation');
+  fb.className = 'quiz-feedback show ' + (isCorrect ? 'correct-fb' : 'wrong-fb');
+  fbText.textContent = isCorrect ? '✓ Rätt!' : '✗ Fel!';
+  fbExplain.textContent = explain;
+  document.getElementById('quiz-next').className = 'quiz-next show';
+  updateScore(isCorrect);
+
+  // update dot
+  const dots = document.querySelectorAll('.quiz-dot');
+  if (dots[quizIndex]) {
+    dots[quizIndex].classList.remove('current');
+    dots[quizIndex].classList.add(isCorrect ? 'done' : 'wrong-dot');
+  }
+}
+
+function nextQuestion() {
+  quizIndex++;
+  renderQuestion();
+}
+
+function showQuizResults() {
+  const card = document.getElementById('quiz-card');
+  const pct = Math.round((totalCorrect / shuffledQuiz.length) * 100);
+  let emoji = pct >= 80 ? '🏆' : pct >= 60 ? '👍' : '💪';
+  card.innerHTML = `<div class="results-card">
+    <div class="results-score">${emoji} ${pct}%</div>
+    <div class="results-text">${totalCorrect} av ${shuffledQuiz.length} rätt</div>
+    <div class="results-detail">Bästa streak: ${streak}</div>
+    <button class="btn-primary" onclick="resetQuiz()" style="margin-top:24px;">Försök igen</button>
+  </div>`;
+}
+
+function resetQuiz() {
+  totalCorrect = 0; totalWrong = 0; streak = 0;
+  document.getElementById('score-correct').textContent = 0;
+  document.getElementById('score-wrong').textContent = 0;
+  document.getElementById('score-streak').textContent = 0;
+  document.getElementById('quiz-card').innerHTML = `
+    <div class="quiz-category" id="quiz-category"></div>
+    <div class="quiz-question" id="quiz-question"></div>
+    <div class="quiz-options" id="quiz-options"></div>
+    <div class="quiz-feedback" id="quiz-feedback"><div id="quiz-feedback-text"></div><div class="quiz-explanation" id="quiz-explanation"></div></div>
+    <button class="quiz-next" id="quiz-next" onclick="nextQuestion()">Nästa fråga →</button>`;
+  initQuiz();
+}
+
+// ================ MATCHING — PREFIX ================
+const prefixPairs = [
+  { prefix: 'Met-', num: '1' },
+  { prefix: 'Et-', num: '2' },
+  { prefix: 'Prop-', num: '3' },
+  { prefix: 'But-', num: '4' },
+  { prefix: 'Pent-', num: '5' },
+  { prefix: 'Hex-', num: '6' },
+  { prefix: 'Hept-', num: '7' },
+  { prefix: 'Okt-', num: '8' },
+];
+
+let matchSelected = null;
+let matchedPairs = 0;
+
+function initMatching() {
+  matchSelected = null;
+  matchedPairs = 0;
+  const area = document.getElementById('match-game-area');
+  const left = shuffleArray(prefixPairs);
+  const right = shuffleArray(prefixPairs);
+
+  area.innerHTML = `
+    <div class="match-grid">
+      <div>
+        <div class="match-col-title">Prefix</div>
+        ${left.map(p => `<div class="match-item" data-type="prefix" data-id="${p.prefix}" onclick="matchClick(this,'prefix','${p.prefix}')" style="margin-bottom:8px;">${p.prefix}</div>`).join('')}
+      </div>
+      <div>
+        <div class="match-col-title">Antal C-atomer</div>
+        ${right.map(p => `<div class="match-item" data-type="num" data-id="${p.prefix}" onclick="matchClick(this,'num','${p.prefix}')" style="margin-bottom:8px;">${p.num}</div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function matchClick(el, type, id) {
+  if (el.classList.contains('matched')) return;
+  if (!matchSelected) {
+    matchSelected = { el, type, id };
+    el.classList.add('selected');
+  } else {
+    if (matchSelected.type === type) {
+      matchSelected.el.classList.remove('selected');
+      matchSelected = { el, type, id };
+      el.classList.add('selected');
+    } else {
+      if (matchSelected.id === id) {
+        matchSelected.el.classList.remove('selected');
+        matchSelected.el.classList.add('matched');
+        el.classList.add('matched');
+        matchedPairs++;
+        updateScore(true);
+      } else {
+        el.classList.add('wrong-match');
+        matchSelected.el.classList.add('wrong-match');
+        const prev = matchSelected.el;
+        updateScore(false);
+        setTimeout(() => { prev.classList.remove('wrong-match','selected'); el.classList.remove('wrong-match'); }, 500);
+      }
+      matchSelected = null;
+    }
+  }
+}
+
+// ================ MATCHING — ALKANES ================
+const alkanePairs = [
+  { name: 'Metan', formula: 'CH₄' },
+  { name: 'Etan', formula: 'C₂H₆' },
+  { name: 'Propan', formula: 'C₃H₈' },
+  { name: 'Butan', formula: 'C₄H₁₀' },
+  { name: 'Pentan', formula: 'C₅H₁₂' },
+  { name: 'Hexan', formula: 'C₆H₁₄' },
+];
+
+let alkaneSelected = null;
+
+function initAlkaneMatching() {
+  alkaneSelected = null;
+  const area = document.getElementById('match-alkane-area');
+  const left = shuffleArray(alkanePairs);
+  const right = shuffleArray(alkanePairs);
+  area.innerHTML = `
+    <div class="match-grid">
+      <div>
+        <div class="match-col-title">Namn</div>
+        ${left.map(p => `<div class="match-item" data-aid="${p.name}" onclick="alkaneClick(this,'name','${p.name}')" style="margin-bottom:8px;">${p.name}</div>`).join('')}
+      </div>
+      <div>
+        <div class="match-col-title">Molekylformel</div>
+        ${right.map(p => `<div class="match-item" data-aid="${p.name}" onclick="alkaneClick(this,'formula','${p.name}')" style="margin-bottom:8px;">${p.formula}</div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function alkaneClick(el, type, id) {
+  if (el.classList.contains('matched')) return;
+  if (!alkaneSelected) {
+    alkaneSelected = { el, type, id };
+    el.classList.add('selected');
+  } else {
+    if (alkaneSelected.type === type) {
+      alkaneSelected.el.classList.remove('selected');
+      alkaneSelected = { el, type, id };
+      el.classList.add('selected');
+    } else {
+      if (alkaneSelected.id === id) {
+        alkaneSelected.el.classList.remove('selected');
+        alkaneSelected.el.classList.add('matched');
+        el.classList.add('matched');
+        updateScore(true);
+      } else {
+        el.classList.add('wrong-match');
+        alkaneSelected.el.classList.add('wrong-match');
+        const prev = alkaneSelected.el;
+        updateScore(false);
+        setTimeout(() => { prev.classList.remove('wrong-match','selected'); el.classList.remove('wrong-match'); }, 500);
+      }
+      alkaneSelected = null;
+    }
+  }
+}
+
+// ================ DESTILLATION TOWER ================
+const towerProducts = [
+  { name: 'Gaser', temp: '20°C', slot: 0 },
+  { name: 'Bensin', temp: '170°C', slot: 1 },
+  { name: 'Fotogen', temp: '220°C', slot: 2 },
+  { name: 'Dieselolja', temp: '300°C', slot: 3 },
+  { name: 'Tung eldningsolja', temp: '350°C', slot: 4 },
+  { name: 'Asfalt & paraffin', temp: '400°C', slot: 5 },
+];
+
+let towerSelectedItem = null;
+let towerSlots = [null, null, null, null, null, null];
+
+function initTower() {
+  towerSelectedItem = null;
+  towerSlots = [null, null, null, null, null, null];
+  const area = document.getElementById('tower-area');
+  const shuffled = shuffleArray(towerProducts);
+  const temps = ['20°C', '170°C', '220°C', '300°C', '350°C', '400°C'];
+
+  area.innerHTML = `
+    <div class="tower">
+      ${temps.map((t, i) => `<div class="tower-slot" id="tower-slot-${i}" onclick="towerSlotClick(${i})">
+        <span class="temp">${t}</span>
+        <span id="tower-slot-text-${i}">?</span>
+      </div>`).join('')}
+      <div style="text-align:center;padding:12px;font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--accent3);">↑ Låg kokpunkt<br>↓ Hög kokpunkt</div>
+    </div>
+    <div class="tower-items">
+      <div style="font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:3px;margin-bottom:8px;">Produkter att placera</div>
+      ${shuffled.map(p => `<div class="tower-drag-item" id="tower-item-${p.slot}" onclick="towerItemClick(${p.slot})">${p.name}</div>`).join('')}
+      <button class="btn-primary" onclick="checkTower()" style="margin-top:16px;width:100%;">Kontrollera ✓</button>
+    </div>`;
+}
+
+function towerItemClick(slot) {
+  const el = document.getElementById('tower-item-' + slot);
+  if (el.classList.contains('placed')) return;
+  document.querySelectorAll('.tower-drag-item').forEach(e => e.classList.remove('selected-tower'));
+  el.classList.add('selected-tower');
+  towerSelectedItem = slot;
+}
+
+function towerSlotClick(slotIndex) {
+  if (towerSelectedItem === null) return;
+  if (towerSlots[slotIndex] !== null) return;
+  const product = towerProducts[towerSelectedItem];
+  towerSlots[slotIndex] = towerSelectedItem;
+  document.getElementById('tower-slot-text-' + slotIndex).textContent = product.name;
+  document.getElementById('tower-slot-' + slotIndex).classList.add('filled');
+  document.getElementById('tower-item-' + towerSelectedItem).classList.add('placed');
+  document.getElementById('tower-item-' + towerSelectedItem).classList.remove('selected-tower');
+  towerSelectedItem = null;
+}
+
+function checkTower() {
+  for (let i = 0; i < 6; i++) {
+    const slot = document.getElementById('tower-slot-' + i);
+    if (towerSlots[i] === i) {
+      slot.classList.add('correct-slot');
+      updateScore(true);
+    } else {
+      slot.classList.add('wrong-slot');
+      if (towerSlots[i] !== null) {
+        document.getElementById('tower-slot-text-' + i).textContent +=
+          ' ← ' + towerProducts[i].name;
+      } else {
+        document.getElementById('tower-slot-text-' + i).textContent = towerProducts[i].name;
+      }
+      updateScore(false);
+    }
+  }
+}
+
+// ================ FLASHCARDS ================
+const flashcards = [
+  { title: 'Metanol', formula: 'CH₃OH', front: 'Kallas också träsprit', back: '<strong>Typ:</strong> Envärd alkohol (1 OH-grupp)<br><strong>Användning:</strong> Lösningsmedel, motorbränsle<br><strong>OBS:</strong> Mycket giftigt! 1/3 risk att bli frisk, 1/3 blind, 1/3 att dö vid förgiftning<br><strong>Strukturformel:</strong> H-C-O-H med 2 H på kolet' },
+  { title: 'Etanol', formula: 'C₂H₅OH', front: 'Den mest kända alkoholen', back: '<strong>Typ:</strong> Envärd alkohol (1 OH-grupp)<br><strong>Användning:</strong> I drycker, bränsle (E85), T-röd<br><strong>OBS:</strong> Beroendeframkallande, dödligt giftig i stora mängder<br><strong>Extra:</strong> Ungdomars hjärna inte färdig förrän 20-25 år — extra känslig' },
+  { title: 'Glykol', formula: 'C₂H₄(OH)₂', front: 'Tvåvärdig alkohol', back: '<strong>Typ:</strong> Tvåvärdig alkohol (2 OH-grupper)<br><strong>Baserad på:</strong> Etan med 2 OH-grupper<br><strong>Användning:</strong> Kylarvätska (50/50 med vatten klarar -35°C)<br><strong>OBS:</strong> Giftigt — propylenglykol ofta använd istället' },
+  { title: 'Glycerol', formula: 'C₃H₅(OH)₃', front: 'Trevärdig alkohol', back: '<strong>Typ:</strong> Trevärdig alkohol (3 OH-grupper)<br><strong>Baserad på:</strong> Propan med 3 OH-grupper<br><strong>Egenskap:</strong> Binder fukt (vattenmolekyler)<br><strong>Användning:</strong> Hudkrämer, salvor, marsipan, snus' },
+  { title: 'Metansyra', formula: 'HCOOH', front: 'Kallas också myrsyra', back: '<strong>Typ:</strong> Organisk syra (karboxylsyra)<br><strong>Funktionell grupp:</strong> COOH (karboxylgrupp)<br><strong>Finns naturligt:</strong> I brännässlor och rödmyror<br><strong>Namn:</strong> Myrsyra — efter myror!' },
+  { title: 'Ättiksyra', formula: 'CH₃COOH', front: 'Den vanligaste organiska syran', back: '<strong>Typ:</strong> Organisk syra (etansyra)<br><strong>Funktionell grupp:</strong> COOH<br><strong>Användning:</strong> Livsmedel (smak & hållbarhet), ättika<br><strong>Kemiskt namn:</strong> Etansyra' },
+  { title: 'Estrar', formula: 'Alkohol + syra', front: 'Smakämnen i godis och glass', back: '<strong>Bildas av:</strong> Alkohol + karboxylsyra → ester + vatten<br><strong>Användning:</strong> Smakämnen i glass, läsk, godis<br><strong>Exempel:</strong> iso-pentanol + ättiksyra → banandoft<br><strong>Naturligt:</strong> Kallas essens' },
+  { title: 'Eten (Etylen)', formula: 'C₂H₄', front: 'Omättat kolväte med dubbelbindning', back: '<strong>Typ:</strong> Alken (dubbelbindning)<br><strong>Användning:</strong> Plasttillverkning (polyeten)<br><strong>Egenskap:</strong> Reagerar lätt tack vare dubbelbindningen<br><strong>Bindning:</strong> C=C (omättat)' },
+  { title: 'Cellulosa', formula: '(C₆H₁₀O₅)ₙ', front: 'Den mest använda polymeren', back: '<strong>Typ:</strong> Naturlig polymer<br><strong>Uppbyggnad:</strong> Upp till 15 000 glukosringar i kedjor<br><strong>Bildar:</strong> Fibrer (papper, trä, bomull)<br><strong>Viskos:</strong> Halvsyntetisk textilfiber gjord av cellulosa' },
+];
+
+let fcIndex = 0;
+
+function renderFlashcard() {
+  const fc = flashcards[fcIndex];
+  document.getElementById('fc-counter').textContent = `${fcIndex + 1} / ${flashcards.length}`;
+  document.getElementById('fc-front').innerHTML = `
+    <div class="flashcard-title">${fc.title}</div>
+    <div class="flashcard-formula">${fc.formula}</div>
+    <div class="flashcard-hint">${fc.front}</div>
+    <div style="margin-top:20px;font-size:0.8rem;color:var(--text-dim);">Klicka för att vända</div>`;
+  document.getElementById('fc-back').innerHTML = `
+    <div class="flashcard-back-content">${fc.back}</div>`;
+  document.getElementById('flashcard').classList.remove('flipped');
+}
+
+function flipCard() { document.getElementById('flashcard').classList.toggle('flipped'); }
+function nextCard() { fcIndex = (fcIndex + 1) % flashcards.length; renderFlashcard(); }
+function prevCard() { fcIndex = (fcIndex - 1 + flashcards.length) % flashcards.length; renderFlashcard(); }
+
+// ================ SUMMARY ================
+function renderSummary() {
+  const topics = [
+    { title: 'Organisk kemi', content: 'Organisk kemi handlar om <strong>kolföreningarnas kemi</strong>. Organiska föreningar innehåller alltid <strong>kol (C)</strong> och ofta <strong>väte (H)</strong>, plus ibland syre, kväve, halogener, fosfor eller svavel. Molekyler med enbart kol och väte kallas <strong>kolväten</strong>.' },
+    { title: 'Kolatomen', content: 'Kol har <strong>atomnummer 6</strong> och <strong>4 valenselektroner</strong> → kan bilda max <strong>4 bindningar</strong>. Former av rent kol: <strong>diamant</strong> (hårt, kristallint), <strong>grafit</strong> (mjukt, lager), <strong>fulleren</strong> (bollformade), <strong>kolnanorör</strong> och <strong>grafen</strong>. Amorft kol = oordnade kolatomer (stenkol, träkol, aktivt kol).' },
+    { title: 'Kolets kretslopp', content: '<strong>Fotosyntes:</strong> CO₂ + H₂O + solenergi → socker + O₂ (växter tar upp koldioxid)<br><strong>Cellandning:</strong> Socker + O₂ → CO₂ + H₂O + energi (djur och växter andas)<br><strong>Nedbrytning:</strong> Organiskt material bryts ner → CO₂<br><strong>Fossilt kol:</strong> Om material inte bryts ner kan det lagras i miljontals år → torv, kol, olja, naturgas.' },
+    { title: 'Växthuseffekten', content: '<strong>Naturlig växthuseffekt:</strong> Nödvändig — håller jorden varm. <strong>Växthusgaser:</strong> koldioxid (CO₂), metan (CH₄), vattenånga.<br><strong>Förstärkt växthuseffekt:</strong> Förbränning av fossila bränslen → mer CO₂ → <strong>global uppvärmning</strong>.' },
+    { title: 'Fossila bränslen & destillation', content: 'Bildas av växt- och djurrester under <strong>högt tryck, hög temperatur, utan syre</strong> i miljontals år → olja, naturgas, stenkol, brunkol.<br><strong>Fraktionerad destillation:</strong> Råolja upphettas till 400°C. Ångor stiger uppåt i ett torn. Ämnen med <strong>låg kokpunkt</strong> stiger högst (gaser ~20°C). Längst ner: asfalt & paraffin (~400°C). Däremellan: bensin, fotogen, diesel, eldningsolja.' },
+    { title: 'Prefix & namngivning', content: '<span class="summary-formula">Met-</span> (1), <span class="summary-formula">Et-</span> (2), <span class="summary-formula">Prop-</span> (3), <span class="summary-formula">But-</span> (4), <span class="summary-formula">Pent-</span> (5), <span class="summary-formula">Hex-</span> (6), <span class="summary-formula">Hept-</span> (7), <span class="summary-formula">Okt-</span> (8), <span class="summary-formula">Non-</span> (9), <span class="summary-formula">Dek-</span> (10)<br>Alkaner slutar på <strong>-an</strong> (enkelbindning, mättade). Alkener slutar på <strong>-en</strong> (dubbelbindning, omättade).' },
+    { title: 'Alkaner (mättade kolväten)', content: 'Innehåller <strong>enbart enkelbindningar</strong>. Opolära → svårlösliga i vatten, löses i fetter.<br><strong>Metan</strong> <span class="summary-formula">CH₄</span> — enklast, viktig växthusgas<br><strong>Etan</strong> <span class="summary-formula">C₂H₆</span> — 2 kolatomer<br><strong>Propan</strong> <span class="summary-formula">C₃H₈</span> — gasol<br><strong>Butan</strong> <span class="summary-formula">C₄H₁₀</span> — tändare<br>Fast form: asfalt, vax, paraffin.' },
+    { title: 'Alkener & alkyner (omättade)', content: '<strong>Alkener:</strong> Dubbelbindning (C=C). Eten <span class="summary-formula">C₂H₄</span> — används i plast.<br><strong>Alkyner:</strong> Trippelbindning (C≡C). Etyn/acetylen <span class="summary-formula">C₂H₂</span> — explosivt, svetsning.' },
+    { title: 'Polymerer', content: 'Korta molekyler (monomerer) i <strong>långa kedjor</strong>.<br><strong>Naturliga:</strong> cellulosa, DNA, proteiner<br><strong>Syntetiska:</strong> plast, gummi<br><strong>Papper:</strong> Cellulosa = upp till 15 000 glukosringar i kedjor → fibrer.' },
+    { title: 'Alkoholer', content: 'Innehåller minst en <strong>OH-grupp</strong> (hydroxylgrupp). Brännbara, giftiga, ofärgade.<br><strong>Metanol</strong> <span class="summary-formula">CH₃OH</span> — träsprit, MYCKET giftigt<br><strong>Etanol</strong> <span class="summary-formula">C₂H₅OH</span> — i dryck & bränsle, beroendeframkallande<br><strong>Glykol</strong> — tvåvärdig (2 OH), kylarvätska<br><strong>Glycerol</strong> — trevärdig (3 OH), hudkrämer, marsipan.' },
+    { title: 'Organiska syror', content: 'Innehåller en <strong>karboxylgrupp (COOH)</strong>. Smakar surt. Skyddar mot bakterier.<br><strong>Metansyra/myrsyra</strong> <span class="summary-formula">HCOOH</span> — brännässlor, rödmyror<br><strong>Etansyra/ättiksyra</strong> <span class="summary-formula">CH₃COOH</span> — ättika, livsmedel<br><strong>Bensoesyra</strong> <span class="summary-formula">C₆H₅COOH</span> — lingon, tranbär, hjortron.' },
+    { title: 'Estrar', content: '<strong>Alkohol + karboxylsyra → ester + vatten</strong><br>Ger smak och doft åt godis, glass, läsk. Kan framställas kemiskt eller utvinnas naturligt (kallas då <strong>essens</strong>).<br>Exempel: iso-pentanol + ättiksyra → banansmak.' },
+    { title: 'Laboration (provet!)', content: 'Tänk på att kunna planera och dokumentera en laboration:<br><strong>Hypotes</strong> → <strong>Material</strong> → <strong>Genomförande</strong> → <strong>Riskanalys</strong> → <strong>Felkällor</strong> → <strong>Resultat</strong> → <strong>Analys</strong>' },
+  ];
+  const container = document.getElementById('summary-content');
+  container.innerHTML = topics.map(t => `
+    <div class="summary-topic card">
+      <h3><span class="dot"></span>${t.title}</h3>
+      <div class="summary-content">${t.content}</div>
+    </div>`).join('');
+}
+
+// ================ INIT ================
+initQuiz();
+initMatching();
+initAlkaneMatching();
+initTower();
+renderFlashcard();
+renderSummary();
+</script>
+</body>
+</html>
