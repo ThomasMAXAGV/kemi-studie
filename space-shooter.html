@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🚀 GALAXY BLASTER — For the Next Great Programmer</title>
+  <style>
+    /* ── Basic page reset ─────────────────────────────────────────── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: 'Courier New', monospace;
+      color: #0ff;
+      overflow: hidden;
+    }
+
+    /* The game lives inside this <canvas> element */
+    canvas {
+      border: 2px solid #0ff;
+      box-shadow: 0 0 30px #0ff, 0 0 60px #00f;
+      display: block;
+    }
+
+    /* HUD bar above the canvas */
+    #hud {
+      width: 600px;
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: rgba(0,0,80,0.7);
+      border: 1px solid #0ff;
+      border-bottom: none;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    #hud span { color: #ff0; }
+  </style>
+</head>
+<body>
+
+<!-- ── HUD (score / lives / wave) displayed above the canvas ───── -->
+<div id="hud">
+  <div>SCORE: <span id="scoreDisplay">0</span></div>
+  <div>WAVE:  <span id="waveDisplay">1</span></div>
+  <div>LIVES: <span id="livesDisplay">❤️❤️❤️</span></div>
+  <div>BEST:  <span id="bestDisplay">0</span></div>
+</div>
+
+<!-- ── Main game canvas ──────────────────────────────────────────── -->
+<canvas id="gameCanvas" width="600" height="700"></canvas>
+
+<script>
+// =============================================================
+//  GALAXY BLASTER  –  a canvas game to learn JavaScript with!
+//
+//  HOW TO READ THIS FILE:
+//  1. Look for "// ──" headings – they separate big sections.
+//  2. Every important idea has a comment above it.
+//  3. Try changing numbers and see what happens!
+//
+//  CONTROLS:
+//    Arrow keys / WASD  →  move ship
+//    SPACE              →  shoot
+//    P                  →  pause
+// =============================================================
+
+// ── 1. GET REFERENCES TO HTML ELEMENTS ─────────────────────────
+const canvas      = document.getElementById('gameCanvas');
+const ctx         = canvas.getContext('2d');     // 2-D drawing tool
+const scoreEl     = document.getElementById('scoreDisplay');
+const waveEl      = document.getElementById('waveDisplay');
+const livesEl     = document.getElementById('livesDisplay');
+const bestEl      = document.getElementById('bestDisplay');
+
+// ── 2. CONSTANTS  (things that never change) ────────────────────
+const W = canvas.width;   // 600 px wide
+const H = canvas.height;  // 700 px tall
+
+// ── 3. WEB AUDIO API – all sounds made from maths, no files! ────
+//  The AudioContext is like a mixing desk.  We build sounds by
+//  creating oscillators (wave generators) and connecting them
+//  to the output (your speakers).
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+
+function ensureAudio() {
+  // Browsers require a user gesture before playing audio.
+  // We create the context on first key-press or click.
+  if (!audioCtx) audioCtx = new AudioCtx();
+}
+
+// Generic helper: plays a short synthesised sound
+// freq  = pitch in Hz   |   type = 'sine','square','sawtooth','triangle'
+// dur   = seconds       |   vol  = 0–1
+function playTone(freq, type, dur, vol = 0.3, freqEnd = null) {
+  if (!audioCtx) return;
+  const osc  = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.type      = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  // Optional pitch slide (great for explosion "whomp" effects)
+  if (freqEnd !== null)
+    osc.frequency.linearRampToValueAtTime(freqEnd, audioCtx.currentTime + dur);
+
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + dur);
+}
+
+// Named sound effects – try tweaking the numbers!
+const SFX = {
+  shoot()     { playTone(880, 'square',   0.08, 0.2); },
+  hit()       { playTone(200, 'sawtooth', 0.12, 0.25, 50); },
+  explode()   {
+    playTone(180, 'sawtooth', 0.4, 0.4, 30);
+    setTimeout(() => playTone(90, 'square', 0.3, 0.3, 20), 80);
+  },
+  bossHit()   { playTone(440, 'triangle', 0.15, 0.3, 110); },
+  powerUp()   {
+    [400,600,800,1000].forEach((f,i) =>
+      setTimeout(() => playTone(f,'sine',0.1,0.3), i*80));
+  },
+  warp()      {
+    playTone(200,'sawtooth',1.2, 0.5, 1800);
+  },
+  playerDie() {
+    playTone(300,'sawtooth',0.6,0.5,30);
+    setTimeout(()=> playTone(80,'square',0.8,0.4,20),200);
+  },
+  laser()     { playTone(1200,'sawtooth',0.06,0.15,400); },
+  bossAppear(){ [120,140,160,140,120].forEach((f,i)=>
+    setTimeout(()=>playTone(f,'square',0.2,0.5),i*150)); },
+};
+
+// ── 4. GAME STATE ────────────────────────────────────────────────
+let score      = 0;
+let bestScore  = 0;
+let wave       = 1;
+let lives      = 3;
+let paused     = false;
+let gameOver   = false;
+let gameStarted = false;
+let frameCount = 0;
+
+// ── 5. STARS (parallax background) ──────────────────────────────
+//  Three layers of stars scroll at different speeds →
+//  gives an illusion of depth (parallax).
+const STAR_LAYERS = [
+  { stars: [], speed: 0.3, size: 1,   colour: '#ffffff44' },
+  { stars: [], speed: 0.8, size: 1.5, colour: '#aaaaff88' },
+  { stars: [], speed: 1.8, size: 2,   colour: '#ffffffcc' },
+];
+
+function initStars() {
+  STAR_LAYERS.forEach(layer => {
+    layer.stars = [];
+    for (let i = 0; i < 100; i++) {
+      layer.stars.push({ x: Math.random() * W, y: Math.random() * H });
+    }
+  });
+}
+
+function updateStars() {
+  STAR_LAYERS.forEach(layer => {
+    layer.stars.forEach(s => {
+      s.y += layer.speed;
+      if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+    });
+  });
+}
+
+function drawStars() {
+  STAR_LAYERS.forEach(layer => {
+    ctx.fillStyle = layer.colour;
+    layer.stars.forEach(s => {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, layer.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  });
+}
+
+// ── 6. NEBULA (colourful cloud in the background) ───────────────
+//  A nebula adds atmosphere.  We pre-render it to an offscreen
+//  canvas so we don't redraw it every frame (performance trick).
+const nebulaCanvas = document.createElement('canvas');
+nebulaCanvas.width = W; nebulaCanvas.height = H;
+const nCtx = nebulaCanvas.getContext('2d');
+
+function buildNebula() {
+  // Several large, soft, semi-transparent circles = nebula cloud
+  const clouds = [
+    { x: 150, y: 200, r: 180, colour: 'rgba(80,0,120,0.10)' },
+    { x: 450, y: 400, r: 220, colour: 'rgba(0,50,130,0.12)' },
+    { x: 300, y: 550, r: 160, colour: 'rgba(130,0,80,0.10)' },
+    { x: 100, y: 600, r: 100, colour: 'rgba(0,100,80,0.08)' },
+  ];
+  clouds.forEach(c => {
+    const g = nCtx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
+    g.addColorStop(0, c.colour);
+    g.addColorStop(1, 'transparent');
+    nCtx.fillStyle = g;
+    nCtx.beginPath();
+    nCtx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+    nCtx.fill();
+  });
+}
+
+// ── 7. THE PLAYER SHIP ──────────────────────────────────────────
+const player = {
+  x: W / 2,    // horizontal centre
+  y: H - 90,   // near the bottom
+  w: 40,       // half-width
+  h: 40,       // half-height
+  speed: 5,
+  invincible: false,   // briefly true after being hit
+  invTimer: 0,
+  shootCooldown: 0,
+  thrusterAnim: 0,     // used to animate the engine flame
+};
+
+// Draw the player's spaceship using basic canvas shapes.
+// Try changing the colours or the shape to make it your own!
+function drawPlayer() {
+  if (player.invincible && Math.floor(frameCount / 4) % 2 === 0) return; // blink
+
+  const x = player.x, y = player.y;
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Engine glow
+  const flame = Math.sin(player.thrusterAnim) * 5 + 12;
+  const glowGrad = ctx.createRadialGradient(0, 24, 0, 0, 24, flame + 10);
+  glowGrad.addColorStop(0, 'rgba(0,200,255,0.8)');
+  glowGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = glowGrad;
+  ctx.beginPath();
+  ctx.arc(0, 24, flame + 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Thruster flames (left + right)
+  ctx.fillStyle = `hsl(${180 + Math.sin(frameCount*0.3)*40}, 100%, 60%)`;
+  ctx.beginPath();
+  ctx.moveTo(-12, 20);
+  ctx.lineTo(-5, 20 + flame);
+  ctx.lineTo(2, 20);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(12, 20);
+  ctx.lineTo(5, 20 + flame);
+  ctx.lineTo(-2, 20);
+  ctx.fill();
+
+  // Main body (gradient from cyan to blue)
+  const bodyGrad = ctx.createLinearGradient(0, -player.h, 0, player.h);
+  bodyGrad.addColorStop(0, '#00ffff');
+  bodyGrad.addColorStop(0.5, '#0088cc');
+  bodyGrad.addColorStop(1, '#003366');
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath();
+  ctx.moveTo(0, -player.h);       // nose
+  ctx.lineTo(player.w, player.h * 0.6);  // right wing tip
+  ctx.lineTo(player.w * 0.4, player.h * 0.3); // right inner
+  ctx.lineTo(0, player.h);        // tail centre
+  ctx.lineTo(-player.w * 0.4, player.h * 0.3);
+  ctx.lineTo(-player.w, player.h * 0.6);
+  ctx.closePath();
+  ctx.fill();
+
+  // Cockpit glass
+  const cockpitGrad = ctx.createRadialGradient(-4, -10, 0, 0, -5, 14);
+  cockpitGrad.addColorStop(0, 'rgba(255,255,255,0.9)');
+  cockpitGrad.addColorStop(1, 'rgba(0,200,255,0.2)');
+  ctx.fillStyle = cockpitGrad;
+  ctx.beginPath();
+  ctx.ellipse(0, -8, 8, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Wing edge stripes (decorative)
+  ctx.strokeStyle = '#00ffff';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(player.w * 0.5, player.h * 0.5);
+  ctx.lineTo(player.w * 0.9, player.h * 0.65);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-player.w * 0.5, player.h * 0.5);
+  ctx.lineTo(-player.w * 0.9, player.h * 0.65);
+  ctx.stroke();
+
+  ctx.restore();
+  player.thrusterAnim += 0.25;
+}
+
+// ── 8. BULLETS ──────────────────────────────────────────────────
+//  A bullet is a simple object: { x, y, dy, colour }
+//  dy is the vertical speed (negative = moving upward).
+let bullets = [];
+
+function spawnBullet() {
+  if (player.shootCooldown > 0) return;
+  bullets.push({ x: player.x, y: player.y - player.h, dy: -12, colour: '#0ff', r: 4 });
+  // Power-up: spread shot
+  if (powerUps.active.spread) {
+    bullets.push({ x: player.x - 18, y: player.y - 20, dy: -11, dx: -1.5, colour: '#ff0', r: 3 });
+    bullets.push({ x: player.x + 18, y: player.y - 20, dy: -11, dx:  1.5, colour: '#ff0', r: 3 });
+  }
+  SFX.shoot();
+  player.shootCooldown = powerUps.active.rapid ? 5 : 12;
+}
+
+function updateBullets() {
+  bullets = bullets.filter(b => b.y > -10);
+  bullets.forEach(b => {
+    b.y += b.dy;
+    if (b.dx) b.x += b.dx;
+  });
+  if (player.shootCooldown > 0) player.shootCooldown--;
+}
+
+function drawBullets() {
+  bullets.forEach(b => {
+    // Glowing bullet
+    const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * 3);
+    g.addColorStop(0, b.colour);
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r * 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+// ── 9. ENEMIES ──────────────────────────────────────────────────
+//  Each enemy has a TYPE that decides its look and behaviour.
+//  Types: 'drone', 'fighter', 'tank', 'zigzag'
+let enemies = [];
+
+function spawnWave() {
+  enemies = [];
+  const count = 5 + wave * 2;          // more enemies each wave
+  const types = ['drone','fighter','tank','zigzag'];
+
+  for (let i = 0; i < count; i++) {
+    const type = types[Math.min(Math.floor(Math.random() * (wave + 1)), 3)];
+    enemies.push(createEnemy(type, i, count));
+  }
+}
+
+function createEnemy(type, index, total) {
+  const cols = Math.ceil(total / 3);
+  const row  = Math.floor(index / cols);
+  const col  = index % cols;
+
+  const e = {
+    x: 60 + col * (W - 120) / Math.max(cols - 1, 1),
+    y: -50 - row * 70,
+    w: 25, h: 25,
+    type,
+    angle: 0,
+    moveTimer: 0,
+    dx: 0, dy: 1,  // movement delta
+    shootTimer: Math.random() * 120,
+  };
+
+  // Per-type stats
+  switch (type) {
+    case 'drone':
+      e.hp = 1; e.speed = 1.0 + wave * 0.1; e.points = 10; e.colour = '#f00';
+      break;
+    case 'fighter':
+      e.hp = 2; e.speed = 1.5 + wave * 0.1; e.points = 20; e.colour = '#f80';
+      e.dx = (Math.random() - 0.5) * 2;
+      break;
+    case 'tank':
+      e.hp = 5; e.speed = 0.7; e.points = 50; e.colour = '#a0f'; e.w = 35; e.h = 35;
+      break;
+    case 'zigzag':
+      e.hp = 1; e.speed = 2 + wave * 0.1; e.points = 30; e.colour = '#0f8';
+      e.zigTimer = 0;
+      break;
+  }
+  return e;
+}
+
+function updateEnemies() {
+  enemies.forEach(e => {
+    e.angle += 0.03;
+    e.moveTimer++;
+
+    switch (e.type) {
+      case 'drone':
+        e.y += e.speed;
+        e.x += Math.sin(e.angle * 2) * 0.8; // gentle sway
+        break;
+      case 'fighter':
+        e.y += e.speed;
+        e.x += e.dx;
+        if (e.x < 30 || e.x > W - 30) e.dx *= -1;
+        break;
+      case 'tank':
+        e.y += e.speed;
+        break;
+      case 'zigzag':
+        e.zigTimer++;
+        e.y += e.speed;
+        e.x += Math.sin(e.zigTimer * 0.15) * 4;
+        break;
+    }
+
+    // Enemy shooting (fighters + tanks)
+    if (e.type === 'fighter' || e.type === 'tank') {
+      e.shootTimer--;
+      if (e.shootTimer <= 0) {
+        spawnEnemyBullet(e);
+        e.shootTimer = 80 - wave * 3;
+      }
+    }
+  });
+
+  // Remove enemies that left the screen
+  enemies = enemies.filter(e => e.y < H + 60);
+}
+
+// Draw each enemy differently based on its type
+function drawEnemy(e) {
+  ctx.save();
+  ctx.translate(e.x, e.y);
+  ctx.rotate(Math.sin(e.angle) * 0.1); // subtle wobble
+
+  switch (e.type) {
+    case 'drone': drawDrone(e); break;
+    case 'fighter': drawFighter(e); break;
+    case 'tank': drawTank(e); break;
+    case 'zigzag': drawZigzag(e); break;
+  }
+
+  // HP bar for tankier enemies
+  if (e.hp > 1) {
+    const maxHp = e.type === 'tank' ? 5 : 2;
+    ctx.fillStyle = '#300';
+    ctx.fillRect(-e.w, -e.h - 8, e.w * 2, 4);
+    ctx.fillStyle = '#0f0';
+    ctx.fillRect(-e.w, -e.h - 8, (e.hp / maxHp) * e.w * 2, 4);
+  }
+
+  ctx.restore();
+}
+
+function drawDrone(e) {
+  ctx.fillStyle = e.colour;
+  ctx.beginPath();
+  ctx.moveTo(0, e.h);
+  ctx.lineTo(-e.w, -e.h);
+  ctx.lineTo(0, -e.h * 0.5);
+  ctx.lineTo(e.w, -e.h);
+  ctx.closePath();
+  ctx.fill();
+  // Eye glow
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#f00';
+  ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawFighter(e) {
+  const g = ctx.createLinearGradient(0, -e.h, 0, e.h);
+  g.addColorStop(0, '#ff8800');
+  g.addColorStop(1, '#660000');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(0, e.h);
+  ctx.lineTo(-e.w * 1.2, 0);
+  ctx.lineTo(-e.w * 0.5, -e.h);
+  ctx.lineTo(0, -e.h * 0.3);
+  ctx.lineTo(e.w * 0.5, -e.h);
+  ctx.lineTo(e.w * 1.2, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#ffa040';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+function drawTank(e) {
+  // Hexagonal shape for the tank
+  ctx.fillStyle = '#7700aa';
+  ctx.strokeStyle = '#dd00ff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+    const px = Math.cos(a) * e.w;
+    const py = Math.sin(a) * e.h;
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // Shield ring
+  ctx.strokeStyle = `rgba(180,0,255,${0.4 + Math.sin(e.angle * 4) * 0.3})`;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(0, 0, e.w + 8, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function drawZigzag(e) {
+  ctx.fillStyle = e.colour;
+  ctx.beginPath();
+  ctx.arc(0, 0, e.w, 0, Math.PI * 2);
+  ctx.fill();
+  // Lightning bolt
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, -e.h);
+  ctx.lineTo(-5, 0);
+  ctx.lineTo(5, 0);
+  ctx.lineTo(0, e.h);
+  ctx.stroke();
+}
+
+// ── 10. ENEMY BULLETS ───────────────────────────────────────────
+let enemyBullets = [];
+
+function spawnEnemyBullet(e) {
+  const angle = Math.atan2(player.y - e.y, player.x - e.x);
+  const speed = 3 + wave * 0.2;
+  enemyBullets.push({
+    x: e.x, y: e.y,
+    dx: Math.cos(angle) * speed,
+    dy: Math.sin(angle) * speed,
+    colour: '#f0f',
+  });
+  SFX.laser();
+}
+
+function updateEnemyBullets() {
+  enemyBullets = enemyBullets.filter(b => b.y < H + 10 && b.y > -10 && b.x > -10 && b.x < W + 10);
+  enemyBullets.forEach(b => { b.x += b.dx; b.y += b.dy; });
+}
+
+function drawEnemyBullets() {
+  enemyBullets.forEach(b => {
+    ctx.fillStyle = b.colour;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = b.colour;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+}
+
+// ── 11. BOSS ────────────────────────────────────────────────────
+let boss = null;
+let bossActive = false;
+
+function spawnBoss() {
+  bossActive = true;
+  boss = {
+    x: W / 2, y: -100,
+    w: 70, h: 60,
+    hp: 20 + wave * 5,
+    maxHp: 20 + wave * 5,
+    speed: 1.5,
+    dx: 1.5,
+    phase: 0,        // attack pattern phase
+    angle: 0,
+    shootTimer: 60,
+    rage: false,     // enters "rage" below 30% HP
+  };
+  SFX.bossAppear();
+}
+
+function updateBoss() {
+  if (!boss) return;
+
+  // Enter the screen from top
+  if (boss.y < 120) { boss.y += 1.5; return; }
+
+  boss.angle += 0.02;
+  boss.phase++;
+  boss.rage = boss.hp < boss.maxHp * 0.3;
+
+  // Side-to-side movement
+  boss.x += boss.dx * boss.speed * (boss.rage ? 1.6 : 1);
+  if (boss.x < boss.w + 20 || boss.x > W - boss.w - 20) boss.dx *= -1;
+
+  // Boss shooting patterns
+  boss.shootTimer--;
+  if (boss.shootTimer <= 0) {
+    bossFire();
+    boss.shootTimer = boss.rage ? 25 : 50;
+  }
+
+  // Check if boss is defeated
+  if (boss.hp <= 0) {
+    spawnExplosion(boss.x, boss.y, 3, '#ff8800');
+    score += 500 + wave * 100;
+    boss = null;
+    bossActive = false;
+    wave++;
+    waveEl.textContent = wave;
+    setTimeout(() => { spawnWave(); }, 2000);
+  }
+}
+
+function bossFire() {
+  if (!boss) return;
+  // Pattern A: fan of 5 bullets
+  for (let i = -2; i <= 2; i++) {
+    const angle = Math.PI / 2 + i * 0.25;
+    enemyBullets.push({
+      x: boss.x, y: boss.y + boss.h,
+      dx: Math.cos(angle) * 4,
+      dy: Math.sin(angle) * 4,
+      colour: '#f00',
+    });
+  }
+  // Pattern B (rage): extra spiral
+  if (boss.rage) {
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + boss.angle;
+      enemyBullets.push({
+        x: boss.x, y: boss.y,
+        dx: Math.cos(a) * 3, dy: Math.sin(a) * 3,
+        colour: '#ff4400',
+      });
+    }
+  }
+  SFX.laser();
+}
+
+function drawBoss() {
+  if (!boss) return;
+  ctx.save();
+  ctx.translate(boss.x, boss.y);
+
+  // Outer glow
+  const pulseAlpha = 0.3 + Math.sin(boss.angle * 3) * 0.2;
+  ctx.shadowBlur  = 30;
+  ctx.shadowColor = boss.rage ? '#ff0000' : '#ff8800';
+
+  // Hull
+  const hullGrad = ctx.createLinearGradient(0, -boss.h, 0, boss.h);
+  hullGrad.addColorStop(0, boss.rage ? '#ff2200' : '#ff8800');
+  hullGrad.addColorStop(1, boss.rage ? '#440000' : '#662200');
+  ctx.fillStyle = hullGrad;
+
+  ctx.beginPath();
+  ctx.moveTo(0, -boss.h);
+  ctx.lineTo(boss.w, 0);
+  ctx.lineTo(boss.w * 0.7, boss.h);
+  ctx.lineTo(-boss.w * 0.7, boss.h);
+  ctx.lineTo(-boss.w, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Rotating shield ring
+  ctx.strokeStyle = `rgba(255,160,0,${pulseAlpha + 0.2})`;
+  ctx.lineWidth = 4;
+  ctx.save();
+  ctx.rotate(boss.angle);
+  for (let i = 0; i < 3; i++) {
+    ctx.save();
+    ctx.rotate((i / 3) * Math.PI * 2);
+    ctx.beginPath();
+    ctx.arc(boss.w * 0.6, 0, 10, 0, Math.PI * 2);
+    ctx.strokeStyle = boss.rage ? '#ff4400' : '#ffaa00';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // Cannon
+  ctx.fillStyle = '#333';
+  ctx.fillRect(-8, boss.h * 0.5, 16, 20);
+  ctx.fillStyle = '#f00';
+  ctx.beginPath();
+  ctx.arc(0, boss.h * 0.5 + 20, 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // HP bar
+  const barW = 200, barH = 14;
+  const barX = (W - barW) / 2, barY = 14;
+  ctx.fillStyle = '#300';
+  ctx.fillRect(barX, barY, barW, barH);
+  const pct = boss.hp / boss.maxHp;
+  const barColour = pct > 0.6 ? '#0f0' : pct > 0.3 ? '#ff0' : '#f00';
+  ctx.fillStyle = barColour;
+  ctx.fillRect(barX, barY, barW * pct, barH);
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(barX, barY, barW, barH);
+  ctx.fillStyle = '#fff';
+  ctx.font = '10px Courier New';
+  ctx.textAlign = 'center';
+  ctx.fillText(`BOSS  ${boss.hp} / ${boss.maxHp}`, W / 2, barY + 10);
+}
+
+// ── 12. POWER-UPS ───────────────────────────────────────────────
+//  Types: 'spread', 'rapid', 'shield', 'bomb'
+let powerUpItems = [];
+const powerUps = { active: { spread: false, rapid: false, shield: false }, timers: {} };
+
+function spawnPowerUp(x, y) {
+  if (Math.random() > 0.25) return; // 25% chance on enemy death
+  const types = ['spread', 'rapid', 'shield', 'bomb'];
+  powerUpItems.push({
+    x, y,
+    type: types[Math.floor(Math.random() * types.length)],
+    angle: 0,
+  });
+}
+
+function updatePowerUps() {
+  powerUpItems.forEach(p => { p.y += 1.5; p.angle += 0.05; });
+  powerUpItems = powerUpItems.filter(p => p.y < H + 20);
+
+  // Tick down active power-ups
+  ['spread','rapid','shield'].forEach(k => {
+    if (powerUps.active[k]) {
+      powerUps.timers[k]--;
+      if (powerUps.timers[k] <= 0) powerUps.active[k] = false;
+    }
+  });
+}
+
+function drawPowerUps() {
+  const ICONS = { spread: '⊕', rapid: '⚡', shield: '🛡', bomb: '💣' };
+  const COLS  = { spread: '#ff0', rapid: '#f80', shield: '#0ff', bomb: '#f0f' };
+
+  powerUpItems.forEach(p => {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.angle);
+
+    // Glowing circle
+    const g = ctx.createRadialGradient(0,0,0,0,0,20);
+    g.addColorStop(0, COLS[p.type] + 'aa');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+
+    ctx.font = '18px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ICONS[p.type], 0, 0);
+    ctx.restore();
+  });
+}
+
+function activatePowerUp(type) {
+  SFX.powerUp();
+  if (type === 'bomb') {
+    // Bomb: destroys ALL enemies on screen
+    enemies.forEach(e => {
+      spawnExplosion(e.x, e.y, 1, '#ff8800');
+      score += e.points;
+    });
+    enemies = [];
+    scoreEl.textContent = score;
+  } else {
+    powerUps.active[type] = true;
+    powerUps.timers[type] = 600; // 10 seconds at 60fps
+  }
+}
+
+// Shield indicator
+function drawShieldIndicator() {
+  if (!powerUps.active.shield) return;
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  ctx.strokeStyle = `rgba(0,255,255,${0.5 + Math.sin(frameCount * 0.1) * 0.4})`;
+  ctx.lineWidth = 3;
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = '#0ff';
+  ctx.beginPath();
+  ctx.arc(0, 0, player.w + 15, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+// ── 13. PARTICLES / EXPLOSIONS ──────────────────────────────────
+let particles = [];
+
+function spawnExplosion(x, y, scale = 1, colour = '#ff8800') {
+  SFX.explode();
+  const count = Math.floor(20 * scale);
+  for (let i = 0; i < count; i++) {
+    const speed = (Math.random() * 4 + 1) * scale;
+    const angle = Math.random() * Math.PI * 2;
+    particles.push({
+      x, y,
+      dx: Math.cos(angle) * speed,
+      dy: Math.sin(angle) * speed,
+      life: 1.0,
+      decay: 0.02 + Math.random() * 0.03,
+      r: (Math.random() * 4 + 2) * scale,
+      colour,
+    });
+  }
+  // Screen-shake
+  screenShake(5 * scale);
+}
+
+let shakeAmount = 0;
+function screenShake(amount) { shakeAmount = Math.max(shakeAmount, amount); }
+
+function updateParticles() {
+  particles.forEach(p => {
+    p.x += p.dx; p.y += p.dy;
+    p.dx *= 0.95; p.dy *= 0.95;
+    p.life -= p.decay;
+  });
+  particles = particles.filter(p => p.life > 0);
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.colour;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ── 14. FLOATING SCORE TEXT ──────────────────────────────────────
+let floatTexts = [];
+
+function spawnFloatText(x, y, text, colour = '#ff0') {
+  floatTexts.push({ x, y, text, colour, life: 1.0, vy: -1.5 });
+}
+
+function updateFloatTexts() {
+  floatTexts.forEach(t => { t.y += t.vy; t.life -= 0.02; });
+  floatTexts = floatTexts.filter(t => t.life > 0);
+}
+
+function drawFloatTexts() {
+  floatTexts.forEach(t => {
+    ctx.globalAlpha = t.life;
+    ctx.fillStyle = t.colour;
+    ctx.font = 'bold 18px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText(t.text, t.x, t.y);
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ── 15. COLLISION DETECTION ─────────────────────────────────────
+//  We use simple "circle vs circle" and "rectangle" checks.
+function dist(ax, ay, bx, by) {
+  return Math.hypot(ax - bx, ay - by);
+}
+
+function checkCollisions() {
+  // Player bullets vs enemies
+  bullets.forEach(b => {
+    enemies.forEach(e => {
+      if (dist(b.x, b.y, e.x, e.y) < e.w + 4) {
+        b.hit = true;
+        e.hp--;
+        SFX.hit();
+        if (e.hp <= 0) {
+          spawnExplosion(e.x, e.y, e.type === 'tank' ? 2 : 1, '#ff4400');
+          spawnFloatText(e.x, e.y - 20, `+${e.points}`);
+          spawnPowerUp(e.x, e.y);
+          score += e.points;
+          scoreEl.textContent = score;
+          e.dead = true;
+        } else {
+          SFX.bossHit();
+        }
+      }
+    });
+    // Player bullet vs boss
+    if (boss && dist(b.x, b.y, boss.x, boss.y) < boss.w + 5) {
+      b.hit = true;
+      boss.hp--;
+      SFX.bossHit();
+    }
+  });
+  bullets  = bullets.filter(b => !b.hit);
+  enemies  = enemies.filter(e => !e.dead);
+
+  // Enemy bullets vs player
+  if (!player.invincible) {
+    enemyBullets.forEach(b => {
+      if (dist(b.x, b.y, player.x, player.y) < player.w * 0.7) {
+        if (powerUps.active.shield) {
+          powerUps.active.shield = false;
+          spawnFloatText(player.x, player.y - 40, 'SHIELD ABSORBED!', '#0ff');
+          b.dead = true;
+        } else {
+          hitPlayer();
+          b.dead = true;
+        }
+      }
+    });
+    enemyBullets = enemyBullets.filter(b => !b.dead);
+  }
+
+  // Enemies reaching player (ram attack)
+  if (!player.invincible) {
+    enemies.forEach(e => {
+      if (dist(e.x, e.y, player.x, player.y) < e.w + player.w * 0.8) {
+        spawnExplosion(e.x, e.y, 1, '#f00');
+        e.dead = true;
+        hitPlayer();
+      }
+    });
+    enemies = enemies.filter(e => !e.dead);
+  }
+
+  // Player vs power-up items
+  powerUpItems.forEach(p => {
+    if (dist(p.x, p.y, player.x, player.y) < 30) {
+      activatePowerUp(p.type);
+      spawnFloatText(p.x, p.y - 20, p.type.toUpperCase() + '!', '#0f0');
+      p.collected = true;
+    }
+  });
+  powerUpItems = powerUpItems.filter(p => !p.collected);
+}
+
+function hitPlayer() {
+  if (player.invincible) return;
+  SFX.playerDie();
+  spawnExplosion(player.x, player.y, 1.5, '#00ffff');
+  lives--;
+  livesEl.textContent = '❤️'.repeat(Math.max(lives, 0));
+  player.invincible = true;
+  player.invTimer = 180; // 3 seconds of invincibility
+  screenShake(10);
+  if (lives <= 0) triggerGameOver();
+}
+
+// ── 16. KEYBOARD INPUT ──────────────────────────────────────────
+const keys = {};
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  ensureAudio();
+  if (e.code === 'Space') { e.preventDefault(); if (gameStarted && !gameOver) spawnBullet(); }
+  if (e.code === 'KeyP') paused = !paused;
+  if (e.code === 'Enter' || e.code === 'Space') {
+    if (!gameStarted) startGame();
+    else if (gameOver) restartGame();
+  }
+});
+document.addEventListener('keyup',  e => { keys[e.code] = false; });
+
+function handleInput() {
+  const speed = player.speed;
+  if ((keys['ArrowLeft']  || keys['KeyA']) && player.x > player.w)        player.x -= speed;
+  if ((keys['ArrowRight'] || keys['KeyD']) && player.x < W - player.w)    player.x += speed;
+  if ((keys['ArrowUp']    || keys['KeyW']) && player.y > player.h + 20)   player.y -= speed;
+  if ((keys['ArrowDown']  || keys['KeyS']) && player.y < H - player.h)    player.y += speed;
+}
+
+// ── 17. WAVE MANAGEMENT ─────────────────────────────────────────
+let waveTransition = false;
+let waveTimer = 0;
+
+function checkWaveEnd() {
+  if (waveTransition || bossActive) return;
+  if (enemies.length === 0) {
+    waveTransition = true;
+    waveTimer = 180; // 3-second gap before next wave / boss
+  }
+}
+
+function updateWave() {
+  if (!waveTransition) return;
+  waveTimer--;
+  if (waveTimer <= 0) {
+    waveTransition = false;
+    // Every 3rd wave is a boss wave
+    if (wave % 3 === 0) {
+      spawnBoss();
+    } else {
+      wave++;
+      waveEl.textContent = wave;
+      spawnWave();
+    }
+  }
+}
+
+function drawWaveMessage() {
+  if (!waveTransition) return;
+  ctx.save();
+  ctx.font = 'bold 36px Courier New';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff';
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = '#0ff';
+  if (wave % 3 === 0) {
+    ctx.fillText('⚠  BOSS INCOMING  ⚠', W/2, H/2);
+  } else {
+    ctx.fillText(`WAVE ${wave + 1}`, W/2, H/2 - 20);
+    ctx.font = '20px Courier New';
+    ctx.fillText('GET READY!', W/2, H/2 + 20);
+  }
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+// ── 18. GAME OVER & START SCREENS ───────────────────────────────
+function triggerGameOver() {
+  gameOver = true;
+  SFX.warp();
+  if (score > bestScore) {
+    bestScore = score;
+    bestEl.textContent = bestScore;
+  }
+}
+
+function drawStartScreen() {
+  ctx.fillStyle = 'rgba(0,0,20,0.75)';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 52px Courier New';
+  ctx.fillStyle = '#0ff';
+  ctx.shadowBlur = 30; ctx.shadowColor = '#0ff';
+  ctx.fillText('GALAXY', W/2, H/2 - 80);
+  ctx.fillStyle = '#ff0';
+  ctx.shadowColor = '#ff0';
+  ctx.fillText('BLASTER', W/2, H/2 - 20);
+  ctx.shadowBlur = 0;
+
+  ctx.font = '16px Courier New';
+  ctx.fillStyle = '#aaf';
+  ctx.fillText('← → ↑ ↓  /  WASD  →  move', W/2, H/2 + 45);
+  ctx.fillText('SPACE  →  shoot', W/2, H/2 + 70);
+  ctx.fillText('P  →  pause', W/2, H/2 + 95);
+
+  ctx.font = 'bold 22px Courier New';
+  ctx.fillStyle = '#0f0';
+  const blink = Math.floor(frameCount / 30) % 2 === 0;
+  if (blink) ctx.fillText('PRESS SPACE / ENTER TO PLAY', W/2, H/2 + 145);
+}
+
+function drawGameOverScreen() {
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 52px Courier New';
+  ctx.fillStyle = '#f00';
+  ctx.shadowBlur = 20; ctx.shadowColor = '#f00';
+  ctx.fillText('GAME OVER', W/2, H/2 - 60);
+  ctx.shadowBlur = 0;
+
+  ctx.font = '24px Courier New';
+  ctx.fillStyle = '#ff0';
+  ctx.fillText(`SCORE: ${score}`, W/2, H/2);
+  ctx.fillStyle = '#0ff';
+  ctx.fillText(`BEST:  ${bestScore}`, W/2, H/2 + 40);
+
+  ctx.font = 'bold 20px Courier New';
+  ctx.fillStyle = '#0f0';
+  if (Math.floor(frameCount / 30) % 2 === 0)
+    ctx.fillText('PRESS SPACE / ENTER TO RETRY', W/2, H/2 + 100);
+}
+
+// ── 19. START / RESTART ─────────────────────────────────────────
+function startGame() {
+  gameStarted = true;
+  gameOver = false;
+  score = 0; lives = 3; wave = 1;
+  scoreEl.textContent = 0;
+  livesEl.textContent = '❤️❤️❤️';
+  waveEl.textContent = 1;
+  player.x = W/2; player.y = H - 90;
+  player.invincible = false;
+  enemies = []; bullets = []; enemyBullets = []; particles = [];
+  powerUpItems = []; floatTexts = [];
+  powerUps.active = { spread: false, rapid: false, shield: false };
+  boss = null; bossActive = false;
+  waveTransition = false;
+  SFX.warp();
+  spawnWave();
+}
+
+function restartGame() { startGame(); }
+
+// ── 20. MAIN GAME LOOP ──────────────────────────────────────────
+//  requestAnimationFrame asks the browser to call our function
+//  roughly 60 times per second – that's how animations work!
+function gameLoop() {
+  frameCount++;
+
+  // Screen shake: offset the canvas temporarily
+  let sx = 0, sy = 0;
+  if (shakeAmount > 0) {
+    sx = (Math.random() - 0.5) * shakeAmount;
+    sy = (Math.random() - 0.5) * shakeAmount;
+    shakeAmount *= 0.85;
+    if (shakeAmount < 0.5) shakeAmount = 0;
+    ctx.save();
+    ctx.translate(sx, sy);
+  }
+
+  // ── CLEAR ──
+  ctx.fillStyle = '#00000f';
+  ctx.fillRect(-10, -10, W + 20, H + 20);
+
+  // ── BACKGROUND LAYERS ──
+  ctx.drawImage(nebulaCanvas, 0, 0);  // nebula (static, pre-drawn)
+  drawStars();                         // scrolling stars
+
+  if (!gameStarted) {
+    updateStars();
+    drawStartScreen();
+    if (shakeAmount > 0) ctx.restore();
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+
+  if (!paused && !gameOver) {
+    // ── UPDATE ──
+    updateStars();
+    handleInput();
+    updateBullets();
+    updateEnemies();
+    updateBoss();
+    updateEnemyBullets();
+    updateParticles();
+    updatePowerUps();
+    updateFloatTexts();
+    checkCollisions();
+    checkWaveEnd();
+    updateWave();
+
+    // Player invincibility timer
+    if (player.invincible) {
+      player.invTimer--;
+      if (player.invTimer <= 0) player.invincible = false;
+    }
+  }
+
+  // ── DRAW ──
+  drawParticles();
+  drawEnemyBullets();
+  drawBullets();
+  enemies.forEach(drawEnemy);
+  drawBoss();
+  drawPowerUps();
+  drawShieldIndicator();
+  drawPlayer();
+  drawFloatTexts();
+  drawWaveMessage();
+
+  // Pause overlay
+  if (paused) {
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#0ff';
+    ctx.font = 'bold 40px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('PAUSED', W/2, H/2);
+    ctx.font = '18px Courier New';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('Press P to continue', W/2, H/2 + 40);
+  }
+
+  if (gameOver) drawGameOverScreen();
+
+  if (shakeAmount > 0) ctx.restore();
+
+  // Loop!
+  requestAnimationFrame(gameLoop);
+}
+
+// ── 21. INITIALISE AND GO! ──────────────────────────────────────
+initStars();
+buildNebula();
+gameLoop();
+
+</script>
+</body>
+</html>
